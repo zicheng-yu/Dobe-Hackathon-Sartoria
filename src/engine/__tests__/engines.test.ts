@@ -6,6 +6,7 @@ import {
   buildPromptPackMarkdown,
   buildProposalMarkdown,
 } from '../../utils/exporters';
+import { buildPathname, parsePathname } from '../../utils/router';
 import { deconstructLocally } from '../deconstructEngine';
 import { createSeedLedgerRecords } from '../ledgerStore';
 import { evaluateFeasibility, evaluateMatch, recommendInitialConfig } from '../matchingEngine';
@@ -183,5 +184,20 @@ describe('Sartoria AI Core Engines (Primary Demo Case 6 + Case 3 + Competition S
     expect(catalogCsv).toContain('SFG-PT-106');
     expect(catalogCsv).toContain('SFG-FB-006');
     expect(catalogCsv).toContain('数据来源与模拟状态');
+  });
+
+  it('resolves multi-entry portal routes for Cloudflare Workers SPA (/, /demo, /video, /vedio, /docs)', () => {
+    expect(parsePathname('/')).toEqual({ section: 'home', demoTab: 'requirements' });
+    expect(parsePathname('/demo')).toEqual({ section: 'demo', demoTab: 'requirements' });
+    expect(parsePathname('/demo/ledger')).toEqual({ section: 'demo', demoTab: 'ledger' });
+    expect(parsePathname('/video')).toEqual({ section: 'video', demoTab: 'requirements' });
+    expect(parsePathname('/vedio')).toEqual({ section: 'video', demoTab: 'requirements' });
+    expect(parsePathname('/docs')).toEqual({ section: 'docs', demoTab: 'requirements' });
+
+    expect(buildPathname({ section: 'home', demoTab: 'requirements' })).toBe('/');
+    expect(buildPathname({ section: 'demo', demoTab: 'requirements' })).toBe('/demo');
+    expect(buildPathname({ section: 'demo', demoTab: 'proposal' })).toBe('/demo/proposal');
+    expect(buildPathname({ section: 'video', demoTab: 'requirements' })).toBe('/video');
+    expect(buildPathname({ section: 'docs', demoTab: 'requirements' })).toBe('/docs');
   });
 });

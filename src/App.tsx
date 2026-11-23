@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BoundaryModal } from './components/BoundaryModal';
 import { LlmConfigModal } from './components/LlmConfigModal';
 import { TopNav, type WorkspaceTab } from './components/TopNav';
@@ -21,8 +21,11 @@ import { resolveStageVisual } from './engine/visualResolver';
 import { AssetKnowledgeBase } from './pages/AssetKnowledgeBase';
 import { BusinessLedger } from './pages/BusinessLedger';
 import { ConfiguratorStudio } from './pages/ConfiguratorStudio';
+import { LandingHome } from './pages/LandingHome';
+import { OnlineDocsPage } from './pages/OnlineDocsPage';
 import { ProposalAndPrompts } from './pages/ProposalAndPrompts';
 import { RequirementStudio } from './pages/RequirementStudio';
+import { VideoShowcase } from './pages/VideoShowcase';
 import type {
   AuditLogEntry,
   ConfigurationState,
@@ -34,6 +37,7 @@ import type {
   RequirementInput,
   StylePackId,
 } from './types/sartoria';
+import { buildPathname, parsePathname, type AppRoute, type PortalSection } from './utils/router';
 
 const LLM_STORAGE_KEY = 'sartoria_ai_llm_settings_v1';
 
@@ -89,7 +93,44 @@ function summarizeConfigDiff(prev: ConfigurationState, next: ConfigurationState)
 export default function App() {
   const initialDemo = PRESET_DEMO_CASES[0];
 
-  const [activeTab, setActiveTab] = useState<WorkspaceTab>('requirements');
+  const [route, setRoute] = useState<AppRoute>(() =>
+    typeof window !== 'undefined'
+      ? parsePathname(window.location.pathname)
+      : { section: 'home', demoTab: 'requirements' }
+  );
+
+  const navigate = useCallback((section: PortalSection, demoTab?: WorkspaceTab) => {
+    setRoute((prev) => {
+      const next: AppRoute = {
+        section,
+        demoTab: demoTab ?? prev.demoTab,
+      };
+      if (typeof window !== 'undefined') {
+        const nextPath = buildPathname(next);
+        if (window.location.pathname !== nextPath) {
+          window.history.pushState(null, '', nextPath);
+        }
+      }
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    // Normalize /vedio alias cleanly to /video in the address bar
+    if (window.location.pathname.toLowerCase() === '/vedio') {
+      window.history.replaceState(null, '', '/video');
+    }
+    const handlePop = () => {
+      setRoute(parsePathname(window.location.pathname));
+    };
+    window.addEventListener('popstate', handlePop);
+    return () => window.removeEventListener('popstate', handlePop);
+  }, []);
+
+  const activeSection = route.section;
+  const activeTab = route.demoTab;
+
   const [activeStylePackId, setActiveStylePackId] = useState<StylePackId>('shanghai-haipai');
   const [input, setInput] = useState<RequirementInput>(initialDemo.input);
   const [deconstructed, setDeconstructed] = useState<DeconstructedRequirement>(() =>
@@ -119,7 +160,7 @@ export default function App() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
-  }, [activeTab]);
+  }, [activeSection, activeTab]);
 
   const appendSessionLog = (
     stage: AuditLogEntry['stage'],
@@ -172,6 +213,14 @@ export default function App() {
         actor: 'Sartoria AI 助手',
       },
     ]);
+  };
+
+  const handleLaunchPresetById = (presetId: string) => {
+    const demo = PRESET_DEMO_CASES.find((d) => d.id === presetId);
+    if (demo) {
+      handleSelectPresetDemo(demo);
+    }
+    navigate('demo', 'requirements');
   };
 
   const handleRunDeconstruct = async () => {
@@ -228,7 +277,7 @@ export default function App() {
       }),
       `复用历史案例「${hc.code}」`
     );
-    setActiveTab('configurator');
+    navigate('demo', 'configurator');
   };
 
   const upsertCurrentSessionToLedger = () => {
@@ -258,7 +307,7 @@ export default function App() {
   const handleSaveAndOpenProposal = () => {
     appendSessionLog('方案初稿', '生成方案初稿与三镜头视觉需求包', `方案编号 ${proposal.id}`);
     upsertCurrentSessionToLedger();
-    setActiveTab('proposal');
+    navigate('demo', 'proposal');
   };
 
   const handleUpdateLedgerRecord = (
@@ -311,7 +360,7 @@ export default function App() {
         actor: '定制业务专员（人工）',
       },
     ]);
-    setActiveTab('configurator');
+    navigate('demo', 'configurator');
   };
 
   const handleSaveLlmSettings = (next: LlmSettings) => {
@@ -326,8 +375,9 @@ export default function App() {
   return (
     <>
       <TopNav
+        activeSection={activeSection}
         activeTab={activeTab}
-        onSelectTab={setActiveTab}
+        onNavigate={navigate}
         llmSettings={llmSettings}
         ledgerCount={ledgerRecords.length}
         onOpenLlmModal={() => setShowLlmModal(true)}
@@ -335,7 +385,19 @@ export default function App() {
       />
 
       <main className="app-main">
-        {activeTab === 'requirements' && (
+        {activeSection === 'home' && (
+          <LandingHome
+            onNavigate={navigate}
+            onLaunchPresetDemo={handleLaunchPresetById}
+            onOpenBoundaryModal={() => setShowBoundaryModal(true)}
+          />
+        )}
+
+        {activeSection === 'video' && <VideoShowcase onNavigate={navigate} />}
+
+        {activeSection === 'docs' && <OnlineDocsPage onNavigate={navigate} />}
+
+        {activeSection === 'demo' && activeTab === 'requirements' && (
           <RequirementStudio
             input={input}
             deconstructed={deconstructed}
@@ -343,11 +405,11 @@ export default function App() {
             onChangeInput={setInput}
             onSelectPresetDemo={handleSelectPresetDemo}
             onRunDeconstruct={handleRunDeconstruct}
-            onProceedToConfigurator={() => setActiveTab('configurator')}
+            onProceedToConfigurator={() => navigate('demo', 'configurator')}
           />
         )}
 
-        {activeTab === 'configurator' && (
+        {activeSection === 'demo' && activeTab === 'configurator' && (
           <ConfiguratorStudio
             input={input}
             deconstructed={deconstructed}
@@ -362,18 +424,18 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'proposal' && (
+        {activeSection === 'demo' && activeTab === 'proposal' && (
           <ProposalAndPrompts
             proposal={proposal}
             promptPack={promptPack}
             heroPreviewImage={visual.heroImage}
             craftPreviewImage={visual.craftCloseupImage}
             onSaveToLedger={upsertCurrentSessionToLedger}
-            onOpenLedger={() => setActiveTab('ledger')}
+            onOpenLedger={() => navigate('demo', 'ledger')}
           />
         )}
 
-        {activeTab === 'knowledge' && (
+        {activeSection === 'demo' && activeTab === 'knowledge' && (
           <AssetKnowledgeBase
             activeStylePackId={activeStylePackId}
             onChangeStylePack={setActiveStylePackId}
@@ -382,14 +444,14 @@ export default function App() {
                 (prev) => ({ ...prev, patternId, activeView: 'blueprint', focusedHotspotId: null }),
                 `从资产库载入版型 ${patternId}`
               );
-              setActiveTab('configurator');
+              navigate('demo', 'configurator');
             }}
             onTryFabricInStudio={(fabricId) => {
               handleUpdateConfig(
                 (prev) => ({ ...prev, fabricId, activeView: 'craft_3d', focusedHotspotId: null }),
                 `从资产库载入面料 ${fabricId}`
               );
-              setActiveTab('configurator');
+              navigate('demo', 'configurator');
             }}
             onTryCraftInStudio={(craftId) => {
               handleUpdateConfig(
@@ -402,13 +464,13 @@ export default function App() {
                 }),
                 `从资产库叠加细节 ${craftId}`
               );
-              setActiveTab('configurator');
+              navigate('demo', 'configurator');
             }}
             onTryCaseInStudio={handleApplyCasePreset}
           />
         )}
 
-        {activeTab === 'ledger' && (
+        {activeSection === 'demo' && activeTab === 'ledger' && (
           <BusinessLedger
             records={ledgerRecords}
             onUpdateRecord={handleUpdateLedgerRecord}
