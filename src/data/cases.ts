@@ -2,6 +2,24 @@ import type { HistoricalCaseAsset } from '../types/sartoria';
 
 export const HISTORICAL_CASES: HistoricalCaseAsset[] = [
   {
+    id: 'case-hist-006',
+    code: 'SFG-CS-2026-006',
+    title: '高个宽厚肩背新中式正式外套 · 交领开襟真丝暗纹标杆案',
+    stylePackId: 'shanghai-haipai',
+    businessType: 'private_couture',
+    clientProfile: '高个肩背宽厚正式场合客户（要求不压肩、不卡手臂、宽松有质感）',
+    sceneId: 'scene-studio-minimal',
+    patternId: 'pat-official-cross-collar-silk',
+    fabricId: 'fab-official-silk-jacquard-subtle',
+    craftIds: ['crf-cross-collar-no-button'],
+    groupSize: '1 套（个人定制 · 静态模拟案例）',
+    referenceCycle: '18–22 个工作日（仅供参考）',
+    styleTags: ['官方案例6', '交领开襟', '无外露纽扣', '真丝暗纹织花', '肩背袖管放量'],
+    reviewSummary:
+      '将「身形偏高、肩背宽厚、不压肩不卡手臂、简约大气正式」转化为 H 型直身微落平肩、交领开襟无立领与真丝暗纹织花方案；颜色与精确松量保留人工核实闸口，线下试身一次确认。',
+    heroImage: '/assets/official1-studio-jacket.jpg',
+  },
+  {
     id: 'case-hist-001',
     code: 'SFG-CS-2026-001',
     title: '中式正式端庄外套 · 短颈低立领与腹部松量标杆案',

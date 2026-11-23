@@ -2,6 +2,25 @@ import type { CraftAsset } from '../types/sartoria';
 
 export const CRAFTS: CraftAsset[] = [
   {
+    id: 'crf-cross-collar-no-button',
+    code: 'SFG-CR-106',
+    name: '交领开襟无外露纽扣与小巧暗花对位工艺',
+    shortName: '交领无外露纽扣',
+    stylePackId: 'shanghai-haipai',
+    heritageLevel: '海派精工',
+    placement: '交领门襟、肩袖与侧缝开衩',
+    extraLeadDays: 3,
+    compatibleFabrics: ['真丝暗纹织花', '薄款醋酸提花锦', '宋锦重纬提花', '香云纱自然肌理', '缎纹暗花织锦'],
+    suitableBusiness: ['private_couture'],
+    styleTags: ['官方案例6', '交领开襟', '无外露纽扣', '小巧暗花', '侧缝开衩'],
+    usageStandard:
+      '采用无立领交领开襟贴边与里布收口，无外露纽扣装饰；前片与侧缝小开衩保持小巧暗花顺向对位，具体领宽与放量由版师打版试身核定。',
+    highlightCopy:
+      '去除立领与外露纽扣束缚，以流畅舒展的交领门襟贴边和低调小巧暗花展现简约大气的新中式正式气度。',
+    hotspot: { x: 64, y: 31, zoomScale: 2.0, label: '交领开襟 · 无立领无外露纽扣结构' },
+    closeupImage: '/assets/case2-craft-detail.jpg',
+  },
+  {
     id: 'crf-low-collar-ergo',
     code: 'SFG-CR-101',
     name: '3cm 圆润低立领与前片腹部松量结构',

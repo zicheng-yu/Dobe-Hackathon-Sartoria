@@ -20,6 +20,7 @@ export function AtelierBlueprintSVG({ pattern, fabric, crafts }: AtelierBlueprin
   const isGown = silhouetteType === 'gown_column' || silhouetteType === 'gown_cape';
   const isStageSet = silhouetteType === 'stage_two_piece';
   const isJacket =
+    silhouetteType === 'jacket_h_cross_collar' ||
     silhouetteType === 'jacket_h_low_collar' ||
     silhouetteType === 'jacket_h_shawl' ||
     silhouetteType === 'jacket_h_dropped';
@@ -106,8 +107,28 @@ export function AtelierBlueprintSVG({ pattern, fabric, crafts }: AtelierBlueprin
               strokeWidth="1.6"
             />
 
-            {/* Collar: Narrow Shawl Lapel (Case 2) vs <=3cm Low Rounded Mandarin Collar (Cases 1 & 4) */}
-            {collarStyle === 'shawl_narrow' ? (
+            {/* Collar: Cross-Collar Open Placket (Case 6) vs Narrow Shawl Lapel (Case 2) vs <=3cm Low Rounded Mandarin Collar (Cases 1 & 4) */}
+            {collarStyle === 'cross_open_no_stand' ? (
+              <g>
+                {/* Stand-free Cross-Collar Open Placket (No Stand Collar, No Exposed Buttons) */}
+                <path
+                  d="M 346 98 L 378 212 L 378 346 M 414 98 L 382 212 L 382 346"
+                  fill="none"
+                  stroke="#111111"
+                  strokeWidth="1.6"
+                />
+                <path
+                  d="M 346 98 L 358 98 L 384 204 L 384 346 M 414 98 L 402 98 L 376 204 L 376 346"
+                  fill="none"
+                  stroke="#111111"
+                  strokeWidth="0.95"
+                  strokeDasharray="3 2"
+                />
+                {/* Subtle Side Hem Slits */}
+                <line x1="312" y1="312" x2="312" y2="346" stroke="#7a6855" strokeWidth="2.2" />
+                <line x1="448" y1="312" x2="448" y2="346" stroke="#7a6855" strokeWidth="2.2" />
+              </g>
+            ) : collarStyle === 'shawl_narrow' ? (
               <g>
                 <path
                   d="M 348 98 C 350 144, 366 178, 380 202 C 394 178, 410 144, 412 98 C 402 90, 358 90, 348 98 Z"
@@ -141,21 +162,45 @@ export function AtelierBlueprintSVG({ pattern, fabric, crafts }: AtelierBlueprin
               </g>
             )}
 
-            {/* Abdominal Ease Allowance Guide Zone */}
-            <rect
-              x="332"
-              y="224"
-              width="96"
-              height="74"
-              rx="8"
-              fill="none"
-              stroke="#7a6855"
-              strokeWidth="1.1"
-              strokeDasharray="4 3"
-            />
-            <text x="380" y="264" textAnchor="middle" fill="#7a6855" fontSize="10">
-              前片腹部宽松余量区
-            </text>
+            {/* Ergonomic Ease Guide Zone */}
+            {silhouetteType === 'jacket_h_cross_collar' ? (
+              <g>
+                <rect
+                  x="294"
+                  y="108"
+                  width="172"
+                  height="78"
+                  rx="10"
+                  fill="none"
+                  stroke="#7a6855"
+                  strokeWidth="1.2"
+                  strokeDasharray="4 3"
+                />
+                <text x="380" y="144" textAnchor="middle" fill="#7a6855" fontSize="9.5">
+                  肩背与袖笼放量方向（不压肩/抬手不卡）
+                </text>
+                <text x="380" y="160" textAnchor="middle" fill="#86868b" fontSize="8.8">
+                  具体松量数值须由版师量体实测，AI 不凭空报数
+                </text>
+              </g>
+            ) : (
+              <g>
+                <rect
+                  x="332"
+                  y="224"
+                  width="96"
+                  height="74"
+                  rx="8"
+                  fill="none"
+                  stroke="#7a6855"
+                  strokeWidth="1.1"
+                  strokeDasharray="4 3"
+                />
+                <text x="380" y="264" textAnchor="middle" fill="#7a6855" fontSize="10">
+                  前片腹部宽松余量区
+                </text>
+              </g>
+            )}
 
             {/* Starlight / Plum Motif Dots for Case 2 */}
             {hasStarlight && (
@@ -364,7 +409,7 @@ export function AtelierBlueprintSVG({ pattern, fabric, crafts }: AtelierBlueprin
           <circle cx="10" cy="10" r="8" fill={baseHex} stroke="rgba(0,0,0,0.16)" />
           <circle cx="32" cy="10" r="8" fill={accentHex} stroke="rgba(0,0,0,0.16)" />
           <text x="52" y="14" fill="#86868b" fontSize="10.5">
-            {fabric.colorName} · 最终生产纸样由集团版师终审定稿
+            仅作企划结构参考 · CAD 定版、具体松量与核色均由版师人工完成
           </text>
         </g>
       </svg>

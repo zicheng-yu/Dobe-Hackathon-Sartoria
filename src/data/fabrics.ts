@@ -2,6 +2,40 @@ import type { FabricAsset } from '../types/sartoria';
 
 export const FABRICS: FabricAsset[] = [
   {
+    id: 'fab-official-silk-jacquard-subtle',
+    code: 'SFG-FB-006',
+    name: '素影暗花 · 真丝暗纹织花面料（待线下核色）',
+    shortName: '真丝暗纹织花',
+    stylePackId: 'shanghai-haipai',
+    colorName: '未指定颜色（暂以中性深调暗纹示意，待人工核色）',
+    colorFamily: 'neutral_silk',
+    composition: '100% 桑蚕丝暗纹织花（静态模拟定制资产）',
+    gsm: 220,
+    weave: '真丝暗纹织花',
+    luster: '柔润微光',
+    drape: '挺而不硬',
+    seasons: ['spring', 'autumn', 'all_season'],
+    suitableBusiness: ['private_couture'],
+    suitableScenes: ['scene-studio-minimal', 'scene-bund-protocol', 'scene-jingan-salon'],
+    styleTags: ['官方案例6', '真丝暗纹织花', '小巧暗花', '挺而不硬', '带骨感不压肩'],
+    careAndMoqNote:
+      '暗纹含蓄低调、垂感适中且自带适度骨感不软塌压肩；因客户未指定颜色，色泽须由顾问携实物米样与客户线下核定，建议专业真丝干洗。',
+    isDelicateForUniform: true,
+    pbr: {
+      baseColor: '#252629',
+      accentColor: '#3d3f45',
+      sheenColor: '#818590',
+      roughness: 0.42,
+      sheen: 0.8,
+      sheenRoughness: 0.36,
+      metalness: 0.08,
+      weaveType: 'silk_subtle_jacquard',
+      patternDensity: 8,
+    },
+    description:
+      '官方案例六建议面料：真丝暗纹织花，暗花小巧低调含蓄、手感柔和、挺而不硬；对宽厚肩背具备适度支撑骨感，不贴身不压肩。',
+  },
+  {
     id: 'fab-official-acetate-jacquard',
     code: 'SFG-FB-001',
     name: '墨曜暗纹 · 醋酸薄款提花锦',

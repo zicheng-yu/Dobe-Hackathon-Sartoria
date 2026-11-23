@@ -9,6 +9,7 @@ import { SCENES } from '../data/scenes';
 import type { ResolvedStageVisual } from '../engine/visualResolver';
 import type {
   ConfigurationState,
+  DeconstructedRequirement,
   FeasibilityNotice,
   MatchExplanation,
   RequirementInput,
@@ -17,6 +18,7 @@ import type {
 
 interface ConfiguratorStudioProps {
   input: RequirementInput;
+  deconstructed: DeconstructedRequirement;
   config: ConfigurationState;
   match: MatchExplanation;
   feasibility: FeasibilityNotice[];
@@ -28,6 +30,7 @@ interface ConfiguratorStudioProps {
 }
 
 export function ConfiguratorStudio({
+  deconstructed,
   config,
   match,
   feasibility,
@@ -54,6 +57,7 @@ export function ConfiguratorStudio({
 
   const topNotice =
     feasibility.find((f) => f.level === 'risk') ??
+    feasibility.find((f) => f.id === 'feas-color-unassigned') ??
     feasibility.find((f) => f.level === 'caution' && f.dimension !== '人工边界') ??
     feasibility[0];
 
@@ -99,11 +103,26 @@ export function ConfiguratorStudio({
       {/* Right 35%: Apple Buy / Porsche Minimal Vertical Configurator Rail */}
       <aside className="rail-pane" aria-label="定制选配栏">
         <div className="rail-scroll">
+          <div
+            style={{
+              fontSize: 11.5,
+              color: 'var(--ink-muted)',
+              background: 'var(--bg-canvas)',
+              padding: '8px 11px',
+              borderRadius: 10,
+              lineHeight: 1.5,
+            }}
+          >
+            <strong>静态模拟定制资产库</strong> · 检索版型 / 面料 / 工艺 / 历史案例四类资产（非真实生产 API）
+          </div>
+
           {/* Section 1: Circular Tactile Fabric Swatch Selector (Apple Finish Picker Feel) */}
           <section>
             <div className="rail-section-head">
-              <h2 className="rail-h2">面料与色系</h2>
-              <span className="rail-meta">{selectedFabric.shortName}</span>
+              <h2 className="rail-h2">面料与质感（模拟资产）</h2>
+              <span className="rail-meta">
+                {selectedFabric.code} · {selectedFabric.shortName}
+              </span>
             </div>
 
             <div className="swatch-circles" role="radiogroup" aria-label="面料色卡">
@@ -116,7 +135,7 @@ export function ConfiguratorStudio({
                     role="radio"
                     aria-checked={active}
                     className={`swatch-circle-btn ${active ? 'active' : ''}`}
-                    title={`${fab.name} · ${fab.gsm}g/m²`}
+                    title={`${fab.code} ${fab.name} · ${fab.gsm}g/m²`}
                     onClick={() =>
                       onUpdateConfig(
                         (prev) => ({ ...prev, fabricId: fab.id, focusedHotspotId: null }),
@@ -136,17 +155,35 @@ export function ConfiguratorStudio({
             </div>
 
             <div style={{ fontSize: 12.5, color: 'var(--ink-secondary)' }}>
-              {selectedFabric.name} · {selectedFabric.gsm}g/m² · {selectedFabric.drape}
+              {selectedFabric.name} · 参考 {selectedFabric.gsm}g/m² · {selectedFabric.drape}
             </div>
+
+            {!deconstructed.colorSpecifiedByUser && (
+              <div className="feas-bar feas-caution" style={{ marginTop: 8 }}>
+                <span className="status-dot dot-caution" />
+                <span>客户未指定颜色：色卡仅作织纹质感示意，不代客定色，最终须携实物米样线下核色。</span>
+              </div>
+            )}
 
             <details className="disclosure" style={{ marginTop: 8, paddingTop: 8 }}>
               <summary>
-                <span>成分与护理说明</span>
+                <span>选料三维判断依据与护理说明</span>
                 <ChevronDown size={14} />
               </summary>
               <div style={{ fontSize: 12, color: 'var(--ink-muted)', marginTop: 8, lineHeight: 1.6 }}>
-                <div>成分：{selectedFabric.composition}</div>
-                <div style={{ marginTop: 3 }}>规范：{selectedFabric.careAndMoqNote}</div>
+                <div>
+                  <strong>风格适配：</strong>
+                  {match.fabricRationale.styleFit}
+                </div>
+                <div style={{ marginTop: 3 }}>
+                  <strong>体感适配：</strong>
+                  {match.fabricRationale.comfortFit}
+                </div>
+                <div style={{ marginTop: 3 }}>
+                  <strong>体型适配：</strong>
+                  {match.fabricRationale.bodyFit}
+                </div>
+                <div style={{ marginTop: 6 }}>成分：{selectedFabric.composition}</div>
               </div>
             </details>
           </section>
@@ -224,11 +261,11 @@ export function ConfiguratorStudio({
             </div>
           </section>
 
-          {/* Section 4: Collapsible Deep Details (Feasibility, Match Reasons, Historical Cases, Live Prompt) */}
+          {/* Section 4: Default-Open Resource Match, Guardrails & Historical Cases */}
           <section>
-            <details className="disclosure" style={{ marginTop: 0 }}>
+            <details className="disclosure" style={{ marginTop: 0 }} open>
               <summary>
-                <span>适配度拆解、风险护栏与相似案例</span>
+                <span>四类资产检索依据、可行性提示与相似案例</span>
                 <ChevronDown size={14} />
               </summary>
 
@@ -243,7 +280,9 @@ export function ConfiguratorStudio({
                   </div>
                 ))}
 
-                <div style={{ fontSize: 12, fontWeight: 600, marginTop: 6 }}>相似历史案例</div>
+                <div style={{ fontSize: 12, fontWeight: 600, marginTop: 6 }}>
+                  检索到的相似历史案例（模拟静态库）
+                </div>
                 {HISTORICAL_CASES.filter((hc) => match.similarCaseIds.includes(hc.id)).map((hc) => (
                   <div
                     key={hc.id}
@@ -258,7 +297,12 @@ export function ConfiguratorStudio({
                       fontSize: 12,
                     }}
                   >
-                    <span>{hc.title}</span>
+                    <div>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-muted)' }}>
+                        {hc.code}
+                      </div>
+                      <div>{hc.title}</div>
+                    </div>
                     <button
                       type="button"
                       className="btn-outline"
@@ -274,7 +318,7 @@ export function ConfiguratorStudio({
 
             <details className="disclosure">
               <summary>
-                <span>实时 AI 绘图提示词预览</span>
+                <span>实时 AI 绘图提示词预览（不调用出图 API）</span>
                 <ChevronDown size={14} />
               </summary>
               <div style={{ marginTop: 10 }}>
@@ -321,12 +365,12 @@ export function ConfiguratorStudio({
               color: 'var(--ink-muted)',
             }}
           >
-            <span>参考周期约 {totalRefDays} 工作日 · AI 草稿</span>
-            <span>终审报价由人工完成</span>
+            <span>参考周期约 {totalRefDays} 工作日 · 静态草稿</span>
+            <span>不做报价 / CAD定版 / 下单</span>
           </div>
 
           <button type="button" className="btn-black" style={{ width: '100%' }} onClick={onSaveAndOpenProposal}>
-            <span>生成方案与视觉提示词</span>
+            <span>生成方案初稿与视觉需求包</span>
             <ArrowRight size={15} />
           </button>
         </div>

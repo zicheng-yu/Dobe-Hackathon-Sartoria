@@ -15,6 +15,7 @@ export interface StylePack {
 
 export interface BlueprintConfig {
   silhouetteType:
+    | 'jacket_h_cross_collar'
     | 'jacket_h_low_collar'
     | 'jacket_h_shawl'
     | 'stage_two_piece'
@@ -24,8 +25,23 @@ export interface BlueprintConfig {
     | 'suit_woman_stand'
     | 'suit_man_double'
     | 'suit_ensemble';
-  collarStyle: 'mandarin_low_3cm' | 'mandarin_high' | 'mandarin_hidden' | 'shawl_narrow' | 'diagonal_cn' | 'peak_lapel' | 'notch_lapel' | 'shawl_cape';
-  closureStyle: 'pipa_frog' | 'hidden_placket' | 'cn_buttons' | 'double_breasted' | 'single_two_btn';
+  collarStyle:
+    | 'cross_open_no_stand'
+    | 'mandarin_low_3cm'
+    | 'mandarin_high'
+    | 'mandarin_hidden'
+    | 'shawl_narrow'
+    | 'diagonal_cn'
+    | 'peak_lapel'
+    | 'notch_lapel'
+    | 'shawl_cape';
+  closureStyle:
+    | 'open_no_buttons'
+    | 'pipa_frog'
+    | 'hidden_placket'
+    | 'cn_buttons'
+    | 'double_breasted'
+    | 'single_two_btn';
   hemLength: 'mid_hip' | 'ankle_two_piece' | 'floor' | 'midi' | 'tailored_suit';
   shoulderLine: 'micro_drop_flat' | 'natural_dropped' | 'sculpted_soft' | 'architectural' | 'natural_sloped';
   slitHeight?: 'subtle' | 'medium' | 'none';
@@ -65,7 +81,16 @@ export interface FabricPBRConfig {
   sheen: number;
   sheenRoughness: number;
   metalness: number;
-  weaveType: 'song_brocade' | 'silk_damask' | 'velvet_jacquard' | 'worsted_twill' | 'wool_silk' | 'satin_drape' | 'xiangyun_matte' | 'acetate_jacquard';
+  weaveType:
+    | 'silk_subtle_jacquard'
+    | 'song_brocade'
+    | 'silk_damask'
+    | 'velvet_jacquard'
+    | 'worsted_twill'
+    | 'wool_silk'
+    | 'satin_drape'
+    | 'xiangyun_matte'
+    | 'acetate_jacquard';
   patternDensity: number;
 }
 
@@ -76,7 +101,18 @@ export interface FabricAsset {
   shortName: string;
   stylePackId: StylePackId;
   colorName: string;
-  colorFamily: 'obsidian' | 'ivory' | 'crimson' | 'navy' | 'stone_gray' | 'pine_green' | 'champagne' | 'mist_blue' | 'ivory_rose' | 'earth_brown';
+  colorFamily:
+    | 'neutral_silk'
+    | 'obsidian'
+    | 'ivory'
+    | 'crimson'
+    | 'navy'
+    | 'stone_gray'
+    | 'pine_green'
+    | 'champagne'
+    | 'mist_blue'
+    | 'ivory_rose'
+    | 'earth_brown';
   composition: string;
   gsm: number;
   weave: string;
@@ -173,6 +209,11 @@ export interface RequirementInput {
   presetDemoId?: string;
 }
 
+export type SpecProvenance =
+  | 'user_explicit'
+  | 'system_suggested'
+  | 'needs_human_verification';
+
 export interface OfficialSpecItem {
   key:
     | 'category'
@@ -185,7 +226,15 @@ export interface OfficialSpecItem {
     | 'easeAllowance';
   label: string;
   value: string;
+  provenance?: SpecProvenance;
+  sourceNote?: string;
   ergonomicCue?: string;
+}
+
+export interface ThreeBucketBreakdown {
+  userExplicit: string[];
+  systemSuggested: string[];
+  needsHumanVerification: string[];
 }
 
 export interface DimensionItem {
@@ -200,6 +249,8 @@ export interface DeconstructedRequirement {
   engineUsed: 'local_semantic' | 'llm_api';
   summary: string;
   officialSpecs: OfficialSpecItem[];
+  threeBuckets: ThreeBucketBreakdown;
+  colorSpecifiedByUser: boolean;
   bodyErgonomics: string[];
   dimensions: DimensionItem[];
   emotionTags: string[];
@@ -218,6 +269,12 @@ export interface ConfigurationState {
   focusedHotspotId: string | null;
 }
 
+export interface FabricThreeDimRationale {
+  styleFit: string;
+  comfortFit: string;
+  bodyFit: string;
+}
+
 export interface MatchExplanation {
   overallScore: number;
   patternScore: number;
@@ -230,6 +287,7 @@ export interface MatchExplanation {
     detail: string;
     score: number;
   }[];
+  fabricRationale: FabricThreeDimRationale;
   similarCaseIds: string[];
 }
 
@@ -238,6 +296,22 @@ export interface FeasibilityNotice {
   level: 'pass' | 'caution' | 'risk';
   dimension: '季节克重' | '工艺兼容' | '工期排期' | '团单规范' | '人工边界';
   title: string;
+  detail: string;
+}
+
+export interface ResourceBasisItem {
+  assetType: '版型' | '面料' | '工艺' | '历史案例';
+  code: string;
+  name: string;
+  sourceTag: string;
+  rationale: string;
+}
+
+export interface WorkflowStageSummary {
+  step: number;
+  title: string;
+  owner: 'AI 企划辅助' | '人机协同核实' | '人工终审执行';
+  status: string;
   detail: string;
 }
 
@@ -250,6 +324,11 @@ export interface ProposalDraft {
   stylePositioning: string;
   emotionAlignment: string;
   officialSpecs: OfficialSpecItem[];
+  threeBuckets: ThreeBucketBreakdown;
+  colorSpecifiedByUser: boolean;
+  resourceBasis: ResourceBasisItem[];
+  fabricRationale: FabricThreeDimRationale;
+  workflowStages: WorkflowStageSummary[];
   patternSummary: string;
   fabricSummary: string;
   craftSummary: string;
@@ -258,6 +337,7 @@ export interface ProposalDraft {
   estimatedLeadTimeNote: string;
   feasibilityNotices: FeasibilityNotice[];
   humanReviewChecklist: string[];
+  dataSourceStatement: string;
   boundaryDisclaimer: string;
 }
 
@@ -278,6 +358,9 @@ export interface VisualPromptPack {
   packTitle: string;
   generatedAt: string;
   paletteSummary: string;
+  colorDisclaimer: string;
+  mustPreserveConstraints: string[];
+  apiBoundaryNote: string;
   shots: ShotPrompt[];
   deliveryBrief: string[];
 }
@@ -290,6 +373,7 @@ export interface AuditLogEntry {
   stage: '需求解构' | '资源选配' | '方案初稿' | '视觉提示词' | '人工复核';
   action: string;
   detail: string;
+  diffSummary?: string;
   actor: 'Sartoria AI 助手' | '定制业务专员（人工）';
 }
 
@@ -304,6 +388,7 @@ export interface LedgerRecord {
   updatedAt: string;
   status: LedgerReviewStatus;
   matchScore: number;
+  matchedCaseIds: string[];
   requirementInput: RequirementInput;
   deconstructed: DeconstructedRequirement;
   config: ConfigurationState;
@@ -330,6 +415,8 @@ export interface PresetDemoCase {
   thumbImage: string;
   input: RequirementInput;
   officialSpecOverride?: OfficialSpecItem[];
+  threeBucketsOverride?: ThreeBucketBreakdown;
+  colorSpecifiedByUser?: boolean;
   recommendedConfig: ConfigurationState;
   specialistNoteSeed: string;
 }

@@ -3,7 +3,11 @@ import { BoundaryModal } from './components/BoundaryModal';
 import { LlmConfigModal } from './components/LlmConfigModal';
 import { TopNav, type WorkspaceTab } from './components/TopNav';
 import { HISTORICAL_CASES } from './data/cases';
+import { CRAFTS } from './data/crafts';
+import { FABRICS } from './data/fabrics';
+import { PATTERNS } from './data/patterns';
 import { PRESET_DEMO_CASES } from './data/presetDemos';
+import { SCENES } from './data/scenes';
 import { deconstructLocally, deconstructRequirement } from './engine/deconstructEngine';
 import {
   buildLedgerRecordFromSession,
@@ -48,6 +52,40 @@ function loadLlmSettings(): LlmSettings {
   };
 }
 
+function summarizeConfigDiff(prev: ConfigurationState, next: ConfigurationState): string | undefined {
+  const diffs: string[] = [];
+  if (prev.patternId !== next.patternId) {
+    const p1 = PATTERNS.find((p) => p.id === prev.patternId)?.code ?? prev.patternId;
+    const p2 = PATTERNS.find((p) => p.id === next.patternId)?.code ?? next.patternId;
+    diffs.push(`版型：${p1} → ${p2}`);
+  }
+  if (prev.fabricId !== next.fabricId) {
+    const f1 = FABRICS.find((f) => f.id === prev.fabricId)?.shortName ?? prev.fabricId;
+    const f2 = FABRICS.find((f) => f.id === next.fabricId)?.shortName ?? next.fabricId;
+    diffs.push(`面料：${f1} → ${f2}`);
+  }
+  if (prev.sceneId !== next.sceneId) {
+    const s1 = SCENES.find((s) => s.id === prev.sceneId)?.shortName ?? prev.sceneId;
+    const s2 = SCENES.find((s) => s.id === next.sceneId)?.shortName ?? next.sceneId;
+    diffs.push(`场景：${s1} → ${s2}`);
+  }
+  const prevC = [...prev.craftIds].sort().join(',');
+  const nextC = [...next.craftIds].sort().join(',');
+  if (prevC !== nextC) {
+    const added = next.craftIds.filter((id) => !prev.craftIds.includes(id));
+    const removed = prev.craftIds.filter((id) => !next.craftIds.includes(id));
+    if (added.length > 0) {
+      const names = added.map((id) => CRAFTS.find((c) => c.id === id)?.shortName ?? id).join('、');
+      diffs.push(`新增工艺：${names}`);
+    }
+    if (removed.length > 0) {
+      const names = removed.map((id) => CRAFTS.find((c) => c.id === id)?.shortName ?? id).join('、');
+      diffs.push(`移除工艺：${names}`);
+    }
+  }
+  return diffs.length > 0 ? diffs.join('；') : undefined;
+}
+
 export default function App() {
   const initialDemo = PRESET_DEMO_CASES[0];
 
@@ -59,13 +97,13 @@ export default function App() {
   );
   const [config, setConfig] = useState<ConfigurationState>(initialDemo.recommendedConfig);
   const [isDeconstructing, setIsDeconstructing] = useState(false);
-  const [sessionLogs, setSessionLogs] = useState<AuditLogEntry[]>([
+  const [sessionLogs, setSessionLogs] = useState<AuditLogEntry[]>(() => [
     {
       id: 'init-log-1',
       timestamp: new Date().toISOString(),
       stage: '需求解构',
       action: `初始化载入「${initialDemo.title}」`,
-      detail: '完成官方 8 项专业参数转译与推荐资产匹配',
+      detail: '完成 8 项专业参数、6 维审美标签与三分栏边界拆解',
       actor: 'Sartoria AI 助手',
     },
   ]);
@@ -87,7 +125,8 @@ export default function App() {
     stage: AuditLogEntry['stage'],
     action: string,
     detail: string,
-    actor: AuditLogEntry['actor'] = 'Sartoria AI 助手'
+    actor: AuditLogEntry['actor'] = 'Sartoria AI 助手',
+    diffSummary?: string
   ) => {
     setSessionLogs((prev) => [
       ...prev.slice(-18),
@@ -97,17 +136,21 @@ export default function App() {
         stage,
         action,
         detail,
+        diffSummary,
         actor,
       },
     ]);
   };
 
   const match = useMemo(() => evaluateMatch(input, deconstructed, config), [input, deconstructed, config]);
-  const feasibility = useMemo(() => evaluateFeasibility(input, config), [input, config]);
+  const feasibility = useMemo(
+    () => evaluateFeasibility(input, config, deconstructed),
+    [input, config, deconstructed]
+  );
   const visual = useMemo(() => resolveStageVisual(config), [config]);
   const proposal = useMemo(
-    () => generateProposalDraft(input, deconstructed, config, feasibility),
-    [input, deconstructed, config, feasibility]
+    () => generateProposalDraft(input, deconstructed, config, feasibility, match),
+    [input, deconstructed, config, feasibility, match]
   );
   const promptPack = useMemo(
     () => generateVisualPromptPack(input, deconstructed, config),
@@ -119,7 +162,16 @@ export default function App() {
     const nextDeconstructed = deconstructLocally(demo.input);
     setDeconstructed(nextDeconstructed);
     setConfig(demo.recommendedConfig);
-    appendSessionLog('需求解构', `载入「${demo.title}」`, '完成官方 8 项专业转译并匹配默认选配');
+    setSessionLogs([
+      {
+        id: `slog-preset-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        stage: '需求解构',
+        action: `载入「${demo.title}」`,
+        detail: '完成 8 项专业转译、三类信息分离并匹配默认静态资产',
+        actor: 'Sartoria AI 助手',
+      },
+    ]);
   };
 
   const handleRunDeconstruct = async () => {
@@ -128,11 +180,14 @@ export default function App() {
       const nextDeconstructed = await deconstructRequirement(input, llmSettings);
       setDeconstructed(nextDeconstructed);
       const nextConfig = recommendInitialConfig(input, nextDeconstructed);
+      const diffSummary = summarizeConfigDiff(config, nextConfig);
       setConfig(nextConfig);
       appendSessionLog(
         '需求解构',
         '执行自然语言需求智能拆解',
-        `输出官方 8 项定制参数；自动匹配最佳版型、面料与设定场景`
+        `输出 8 项专业参数与 6 维审美标签（${nextDeconstructed.colorSpecifiedByUser ? '已识别色彩倾向' : '未指定颜色·留待人工核色'}）`,
+        'Sartoria AI 助手',
+        diffSummary
       );
     } finally {
       setIsDeconstructing(false);
@@ -143,29 +198,42 @@ export default function App() {
     updater: (prev: ConfigurationState) => ConfigurationState,
     auditNote?: string
   ) => {
-    setConfig((prev) => updater(prev));
-    if (auditNote) {
-      appendSessionLog('资源选配', auditNote, '已同步更新实景舞台、3D面料光泽、可行性校验与AI提示词');
-    }
+    setConfig((prev) => {
+      const next = updater(prev);
+      if (auditNote) {
+        const diffSummary = summarizeConfigDiff(prev, next);
+        appendSessionLog(
+          '资源选配',
+          auditNote,
+          '已同步更新实景舞台、3D面料、可行性校验与三镜头提示词包',
+          '定制业务专员（人工）',
+          diffSummary
+        );
+      }
+      return next;
+    });
   };
 
   const handleApplyCasePreset = (caseId: string) => {
     const hc = HISTORICAL_CASES.find((c) => c.id === caseId);
     if (!hc) return;
-    setConfig((prev) => ({
-      ...prev,
-      patternId: hc.patternId,
-      fabricId: hc.fabricId,
-      craftIds: [...hc.craftIds],
-      sceneId: hc.sceneId,
-      focusedHotspotId: null,
-    }));
-    appendSessionLog('资源选配', `复用历史案例「${hc.code}」`, hc.title);
+    handleUpdateConfig(
+      (prev) => ({
+        ...prev,
+        patternId: hc.patternId,
+        fabricId: hc.fabricId,
+        craftIds: [...hc.craftIds],
+        sceneId: hc.sceneId,
+        focusedHotspotId: null,
+      }),
+      `复用历史案例「${hc.code}」`
+    );
     setActiveTab('configurator');
   };
 
   const upsertCurrentSessionToLedger = () => {
     const existing = ledgerRecords.find((r) => r.projectName === input.projectName);
+    const configDiff = existing ? summarizeConfigDiff(existing.config, config) : undefined;
     const nextRec = buildLedgerRecordFromSession({
       id: existing?.id,
       projectCode: existing?.projectCode,
@@ -176,8 +244,9 @@ export default function App() {
       config,
       specialistNotes: existing?.specialistNotes ?? '',
       status: existing?.status ?? '待业务专员复核',
-      existingLogs: [...(existing?.auditLogs ?? []), ...sessionLogs].slice(-15),
-      actionNote: existing ? '同步更新企划方案初稿与视觉包' : '新建台账并完成首轮方案归档',
+      existingLogs: [...(existing?.auditLogs ?? []), ...sessionLogs].slice(-20),
+      actionNote: existing ? '同步更新方案初稿与视觉需求包' : '新建台账并完成首轮方案归档',
+      actionDiff: configDiff,
     });
 
     setLedgerRecords((prev) => {
@@ -187,38 +256,42 @@ export default function App() {
   };
 
   const handleSaveAndOpenProposal = () => {
-    appendSessionLog('方案初稿', '生成方案初稿与视觉提示词包', `方案编号 ${proposal.id}`);
+    appendSessionLog('方案初稿', '生成方案初稿与三镜头视觉需求包', `方案编号 ${proposal.id}`);
     upsertCurrentSessionToLedger();
     setActiveTab('proposal');
   };
 
   const handleUpdateLedgerRecord = (
     id: string,
-    patch: { status?: LedgerReviewStatus; specialistNotes?: string },
-    auditAction: string
+    patch: {
+      projectName?: string;
+      clientName?: string;
+      status?: LedgerReviewStatus;
+      specialistNotes?: string;
+    },
+    auditAction: string,
+    diffSummary?: string
   ) => {
     setLedgerRecords((prev) =>
       prev.map((rec) => {
         if (rec.id !== id) return rec;
         const now = new Date().toISOString();
-        const shouldAppendLog = patch.status !== undefined;
         return {
           ...rec,
           ...patch,
           updatedAt: now,
-          auditLogs: shouldAppendLog
-            ? [
-                ...rec.auditLogs,
-                {
-                  id: `log-h-${Date.now()}`,
-                  timestamp: now,
-                  stage: '人工复核',
-                  action: auditAction,
-                  detail: `当前状态：${patch.status ?? rec.status}`,
-                  actor: '定制业务专员（人工）',
-                },
-              ]
-            : rec.auditLogs,
+          auditLogs: [
+            ...rec.auditLogs,
+            {
+              id: `log-h-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+              timestamp: now,
+              stage: '人工复核',
+              action: auditAction,
+              detail: `当前状态：${patch.status ?? rec.status}`,
+              diffSummary,
+              actor: '定制业务专员（人工）',
+            },
+          ],
         };
       })
     );
@@ -228,6 +301,16 @@ export default function App() {
     setInput(record.requirementInput);
     setDeconstructed(record.deconstructed);
     setConfig(record.config);
+    setSessionLogs([
+      {
+        id: `slog-reload-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        stage: '资源选配',
+        action: `从台账回载项目「${record.projectCode}」`,
+        detail: '继续调整静态模拟资源并同步追踪变更轨迹',
+        actor: '定制业务专员（人工）',
+      },
+    ]);
     setActiveTab('configurator');
   };
 
@@ -267,6 +350,7 @@ export default function App() {
         {activeTab === 'configurator' && (
           <ConfiguratorStudio
             input={input}
+            deconstructed={deconstructed}
             config={config}
             match={match}
             feasibility={feasibility}

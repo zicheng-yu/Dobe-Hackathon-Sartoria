@@ -7,6 +7,7 @@ import { SCENES } from '../data/scenes';
 import type {
   ConfigurationState,
   DeconstructedRequirement,
+  FabricThreeDimRationale,
   FeasibilityNotice,
   MatchExplanation,
   RequirementInput,
@@ -29,12 +30,12 @@ export function recommendInitialConfig(
   const text = `${input.projectName} ${input.rawNarrative}`.toLowerCase();
   const isUniform = input.businessType === 'corporate_uniform';
 
-  // Smart semantic pattern selection covering all 4 official archetypes + uniform + evening gown
-  let patternId = isUniform ? 'pat-haipai-suit-ensemble' : 'pat-official-h-low-collar';
-  let fabricId = isUniform ? 'fab-bund-navy-wool130' : 'fab-official-acetate-jacquard';
+  // Smart semantic selection covering Case 6 (Primary Demo), Case 3 (Stage Two-Piece), Cases 1/2/4, Uniform & Evening Gown
+  let patternId = isUniform ? 'pat-haipai-suit-ensemble' : 'pat-official-cross-collar-silk';
+  let fabricId = isUniform ? 'fab-bund-navy-wool130' : 'fab-official-silk-jacquard-subtle';
   let craftIds: string[] = isUniform
     ? ['crf-full-canvas-guiba', 'crf-hidden-mandarin-placket', 'crf-milanese-cuff-label']
-    : ['crf-low-collar-ergo', 'crf-hidden-mandarin-placket'];
+    : ['crf-cross-collar-no-button'];
   let sceneId = input.targetSceneId || (isUniform ? 'scene-lujiazui-summit' : 'scene-studio-minimal');
 
   if (!isUniform) {
@@ -43,6 +44,19 @@ export function recommendInitialConfig(
       fabricId = 'fab-official-ivory-rose-stage';
       craftIds = ['crf-contrast-piping-cuff', 'crf-haipai-pipa-button'];
       sceneId = 'scene-outdoor-stage';
+    } else if (
+      text.includes('肩背') ||
+      text.includes('宽厚') ||
+      text.includes('不压肩') ||
+      text.includes('不卡手臂') ||
+      text.includes('交领') ||
+      text.includes('开襟') ||
+      text.includes('身形偏高')
+    ) {
+      patternId = 'pat-official-cross-collar-silk';
+      fabricId = 'fab-official-silk-jacquard-subtle';
+      craftIds = ['crf-cross-collar-no-button'];
+      sceneId = input.targetSceneId || 'scene-studio-minimal';
     } else if (text.includes('香云纱') || text.includes('溜肩')) {
       patternId = 'pat-official-xiangyun-dropped';
       fabricId = 'fab-official-xiangyun-matte';
@@ -62,6 +76,11 @@ export function recommendInitialConfig(
           : 'fab-song-obsidian-gold';
       craftIds = ['crf-haipai-pipa-button', 'crf-suzhou-magnolia-embroidery'];
       sceneId = input.targetSceneId || 'scene-bund-banquet';
+    } else if (text.includes('脖子短') || text.includes('肚腩') || text.includes('醋酸')) {
+      patternId = 'pat-official-h-low-collar';
+      fabricId = 'fab-official-acetate-jacquard';
+      craftIds = ['crf-low-collar-ergo', 'crf-hidden-mandarin-placket'];
+      sceneId = input.targetSceneId || 'scene-studio-minimal';
     }
   } else {
     if (text.includes('暖灰')) fabricId = 'fab-shikumen-stone-gray';
@@ -78,9 +97,41 @@ export function recommendInitialConfig(
   };
 }
 
+function buildFabricRationale(
+  input: RequirementInput,
+  deconstructed: DeconstructedRequirement,
+  pattern: (typeof PATTERNS)[number],
+  fabric: (typeof FABRICS)[number]
+): FabricThreeDimRationale {
+  const text = `${input.rawNarrative}`;
+  const isCase6 = fabric.id === 'fab-official-silk-jacquard-subtle';
+  const isStage = pattern.blueprintConfig.silhouetteType === 'stage_two_piece';
+
+  const styleFit = isCase6
+    ? `暗纹含蓄低调，契合简约大气的新中式正式气质，纹样小巧不张扬；色彩待客户线下核定。`
+    : isStage
+      ? `米白暗纹宋锦与亮粉高垂感缎面呼应户外舞台氛围，兼顾正式仪式感与上镜活力。`
+      : `${fabric.weave}具备「${fabric.luster}」视觉语言，贴合「${deconstructed.emotionTags.slice(0, 2).join('、')}」审美定位。`;
+
+  const comfortFit = isCase6
+    ? `面料垂感适中、手感柔和、挺而不硬（参考克重 ${fabric.gsm}g/m²），不易紧贴身体，满足宽松无束缚要求。`
+    : `${fabric.composition}呈现「${fabric.drape}」体感，${fabric.careAndMoqNote}`;
+
+  const bodyFit =
+    text.includes('肩背') || text.includes('宽厚') || isCase6
+      ? `针对肩背宽厚体型，面料自带适度骨感，不会软塌塌压肩，兼顾挺括轮廓与抬臂活动舒适度（具体克重与手感须实物米样核实）。`
+      : text.includes('肚腩')
+        ? `悬垂而不紧贴，配合 H 型直身无收腰结构，有助于自然弱化腹部贴合感。`
+        : text.includes('抬手') || text.includes('坐奏') || isStage
+          ? `轻盈顺滑且垂坠自然，配合宽袖管与大 A 摆结构，保障演奏抬臂与坐姿舒展。`
+          : `契合「${pattern.fitGuidance}」，最终垂感与舒适度以实物米样触感为准。`;
+
+  return { styleFit, comfortFit, bodyFit };
+}
+
 export function evaluateMatch(
   input: RequirementInput,
-  _deconstructed: DeconstructedRequirement,
+  deconstructed: DeconstructedRequirement,
   config: ConfigurationState
 ): MatchExplanation {
   const pattern = PATTERNS.find((p) => p.id === config.patternId) ?? PATTERNS[0];
@@ -133,19 +184,19 @@ export function evaluateMatch(
   const reasons: MatchExplanation['reasons'] = [
     {
       category: '版型适配',
-      title: pattern.name,
+      title: `${pattern.name}（${pattern.code}）`,
       detail: `${pattern.silhouette}；${pattern.easeAllowance}`,
       score: patternScore,
     },
     {
       category: '面料适配',
-      title: `${fabric.name}（${fabric.gsm}g/m²）`,
+      title: `${fabric.name}（${fabric.code} · ${fabric.gsm}g/m²）`,
       detail: `${fabric.composition} · ${fabric.drape} · ${fabric.luster}`,
       score: fabricScore,
     },
     {
       category: '工艺组合',
-      title: crafts.length > 0 ? crafts.map((c) => c.shortName).join(' + ') : '净面极简精工',
+      title: crafts.length > 0 ? crafts.map((c) => `${c.shortName}(${c.code})`).join(' + ') : '净面极简精工',
       detail:
         incompatibleCount > 0
           ? `存在 ${incompatibleCount} 项工艺与「${fabric.weave}」需版师复核兼容性。`
@@ -172,6 +223,8 @@ export function evaluateMatch(
     .slice(0, 2)
     .map((x) => x.id);
 
+  const fabricRationale = buildFabricRationale(input, deconstructed, pattern, fabric);
+
   return {
     overallScore,
     patternScore,
@@ -179,13 +232,15 @@ export function evaluateMatch(
     craftScore,
     sceneScore,
     reasons,
+    fabricRationale,
     similarCaseIds,
   };
 }
 
 export function evaluateFeasibility(
   input: RequirementInput,
-  config: ConfigurationState
+  config: ConfigurationState,
+  deconstructed?: DeconstructedRequirement
 ): FeasibilityNotice[] {
   const notices: FeasibilityNotice[] = [];
   const pattern = PATTERNS.find((p) => p.id === config.patternId) ?? PATTERNS[0];
@@ -214,7 +269,7 @@ export function evaluateFeasibility(
       level: 'pass',
       dimension: '季节克重',
       title: `克重与体感适配良好（${fabric.gsm}g/m² · ${fabric.drape}）`,
-      detail: `满足当前季候与场景穿着舒适度要求。`,
+      detail: '满足当前季候与场景穿着舒适度参考要求，实物手感须通过工坊米样复核。',
     });
   }
 
@@ -244,8 +299,18 @@ export function evaluateFeasibility(
       id: 'feas-craft-ok',
       level: 'pass',
       dimension: '工艺兼容',
-      title: `已选 ${crafts.length} 项工艺与「${fabric.weave}」兼容`,
-      detail: '符合海派工坊制作规范，可进入毛样试身核定。',
+      title: `已选 ${crafts.length} 项工艺与「${fabric.weave}」规范兼容`,
+      detail: '符合静态工艺规范库约束，实际落位与对花方案须交由版师终审。',
+    });
+  }
+
+  if (deconstructed && !deconstructed.colorSpecifiedByUser) {
+    notices.push({
+      id: 'feas-color-unassigned',
+      level: 'caution',
+      dimension: '人工边界',
+      title: '客户未指定颜色 · 禁止 AI 代客定色',
+      detail: '当前视觉与选配预览仅作廓形与暗纹肌理示意，最终成衣色彩须由顾问携实物面料色卡线下与客户确认。',
     });
   }
 
@@ -257,15 +322,15 @@ export function evaluateFeasibility(
       level: 'caution',
       dimension: '工期排期',
       title: `含高工时手工工艺（参考周期约 ${totalRefDays} 工作日）`,
-      detail: `非遗手工预计额外增加 ${extraDays} 个工作日，实际排期须由工坊人工核定。`,
+      detail: `非遗手工预计额外增加 ${extraDays} 个工作日，仅供内部企划估算，实际排期须由工坊人工核定。`,
     });
   } else {
     notices.push({
       id: 'feas-lead-standard',
       level: 'pass',
       dimension: '工期排期',
-      title: `参考企划周期约 ${totalRefDays} 个工作日`,
-      detail: '处于集团标准周期内，最终交期以业务签单排期为准。',
+      title: `参考企划周期约 ${totalRefDays} 个工作日（非正式交期承诺）`,
+      detail: '处于集团标准参考周期内，最终交期与排产由人工团队核定。',
     });
   }
 
@@ -273,8 +338,9 @@ export function evaluateFeasibility(
     id: 'feas-human-boundary',
     level: 'caution',
     dimension: '人工边界',
-    title: 'AI 企划参考初稿 · 终审/报价/下单须人工完成',
-    detail: '视觉预览与参数清单仅作前期沟通参考，实物米样核色、版型定稿与报价签约由人工执行。',
+    title: 'AI 企划参考初稿 · 不做报价/CAD定版/签约/打样/下单',
+    detail:
+      '全部资产为静态模拟数据，不接入生产系统或真实业务 API；具体松量厘米数、CAD 定版、打样试身、报价签约均由人工完成。',
   });
 
   return notices;

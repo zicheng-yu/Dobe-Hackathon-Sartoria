@@ -84,7 +84,12 @@ export function AssetKnowledgeBase({
   return (
     <div className="page-wrap">
       <div className="page-head">
-        <h1 className="page-h1">定制资产知识库</h1>
+        <div>
+          <h1 className="page-h1">定制资产知识库</h1>
+          <div style={{ fontSize: 12, color: 'var(--ink-muted)', marginTop: 4 }}>
+            模拟静态定制资产 · 来源：上海服装集团海派定制公开案例结构化整理 · 仅用于企划辅助原型演示，不接入真实生产 API
+          </div>
+        </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <select
             className="clean-select"

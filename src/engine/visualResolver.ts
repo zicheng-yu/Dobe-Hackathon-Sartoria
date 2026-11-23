@@ -30,7 +30,9 @@ export function resolveStageVisual(config: ConfigurationState): ResolvedStageVis
   const silhouette = pattern.blueprintConfig.silhouetteType;
   const isUniform = pattern.businessType === 'corporate_uniform';
   const isOfficialMensJacket =
-    silhouette === 'jacket_h_low_collar' || silhouette === 'jacket_h_dropped';
+    silhouette === 'jacket_h_cross_collar' ||
+    silhouette === 'jacket_h_low_collar' ||
+    silhouette === 'jacket_h_dropped';
   const isOfficialShawl = silhouette === 'jacket_h_shawl';
   const isStageTwoPiece = silhouette === 'stage_two_piece';
 
@@ -55,6 +57,7 @@ export function resolveStageVisual(config: ConfigurationState): ResolvedStageVis
     } else {
       heroImage = '/assets/official1-studio-jacket.jpg';
       isExact =
+        fabric.id === 'fab-official-silk-jacquard-subtle' ||
         fabric.id === 'fab-official-acetate-jacquard' ||
         fabric.id === 'fab-official-xiangyun-matte';
       previewBadge = `${scene.shortName} · ${fabric.shortName}`;

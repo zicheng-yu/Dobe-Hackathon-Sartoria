@@ -67,6 +67,39 @@ function createProceduralFabricTextures(fabric: FabricAsset): {
       bctx.stroke();
     }
     ctx.globalAlpha = 1;
+  } else if (weave === 'silk_subtle_jacquard') {
+    // Understated micro-floral tonal silk jacquard for Official Case 6
+    const cell = 38;
+    ctx.strokeStyle = fabric.pbr.accentColor;
+    ctx.fillStyle = fabric.pbr.accentColor;
+    bctx.strokeStyle = '#b8b8b8';
+    bctx.fillStyle = '#adadad';
+    for (let y = 0; y < size + cell; y += cell) {
+      for (let x = 0; x < size + cell; x += cell) {
+        const offsetX = (y / cell) % 2 === 0 ? 0 : cell / 2;
+        const cx = x + offsetX;
+        const cy = y;
+        ctx.globalAlpha = 0.24;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - 8);
+        ctx.lineTo(cx + 8, cy);
+        ctx.lineTo(cx, cy + 8);
+        ctx.lineTo(cx - 8, cy);
+        ctx.closePath();
+        ctx.stroke();
+
+        ctx.globalAlpha = 0.28;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        bctx.beginPath();
+        bctx.arc(cx, cy, 2.8, 0, Math.PI * 2);
+        bctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
   } else if (weave === 'acetate_jacquard') {
     // Subtle geometric architectural micro-jacquard for Official Case 1
     const cell = 44;

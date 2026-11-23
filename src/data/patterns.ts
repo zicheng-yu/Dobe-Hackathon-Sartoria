@@ -2,6 +2,39 @@ import type { PatternAsset } from '../types/sartoria';
 
 export const PATTERNS: PatternAsset[] = [
   {
+    id: 'pat-official-cross-collar-silk',
+    code: 'SFG-PT-106',
+    name: '简约大气新中式 · 交领开襟 H 型外套',
+    shortSpec: 'H型无收腰 · 交领开襟无立领 · 微落平肩 · 臀中',
+    stylePackId: 'shanghai-haipai',
+    businessType: 'private_couture',
+    category: '正式新中式外套',
+    silhouette: 'H 型直身结构，无收腰；肩型采用微落平肩，线条简约利落',
+    collarType: '交领开襟款式，无立领，领型线条柔和舒展',
+    shoulderType: '微落平肩（针对高个宽厚肩背，在肩线与袖笼方向性预留松量、不压肩）',
+    lengthRatio: '衣长至臀中位置',
+    easeAllowance: '整体围度宽松，肩背、袖管放量充足，抬手、站立活动自在无紧绷（具体放量数值由版师量体与试穿核定）',
+    fitGuidance:
+      '面向身形偏高、肩背较宽厚且追求简约大气正式感的客户，弱化肩部压迫并保证抬手不卡臂；最终尺寸须由版师实测核定',
+    suitableScenes: ['scene-studio-minimal', 'scene-bund-protocol', 'scene-jingan-salon'],
+    styleTags: ['官方案例6', '主Demo', '交领开襟', '无立领', '肩背放量', '微落平肩'],
+    seasonFit: ['spring', 'autumn', 'all_season'],
+    usageStandard:
+      '优选垂感适中、手感柔和且带适度骨感的真丝暗纹织花面料，挺而不硬、不软塌压肩；不含外露纽扣装饰。',
+    baseLeadDays: 18,
+    blueprintConfig: {
+      silhouetteType: 'jacket_h_cross_collar',
+      collarStyle: 'cross_open_no_stand',
+      closureStyle: 'open_no_buttons',
+      hemLength: 'mid_hip',
+      shoulderLine: 'micro_drop_flat',
+      slitHeight: 'subtle',
+      easeHighlight: '肩背与袖笼方向性放量 · 交领开襟无立领',
+    },
+    description:
+      '官方案例六标杆版型：H 型直身微落平肩搭配无立领交领开襟与侧缝小开衩，兼顾正式气质与高个宽厚肩背的抬臂舒展体验。',
+  },
+  {
     id: 'pat-official-h-low-collar',
     code: 'SFG-PT-101',
     name: '端庄中式 · H 型直身低立领外套',

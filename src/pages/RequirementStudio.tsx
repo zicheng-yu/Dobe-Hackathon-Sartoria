@@ -1,4 +1,4 @@
-import { ArrowRight, ChevronDown, Sparkles } from 'lucide-react';
+import { ArrowRight, CheckCircle2, ChevronDown, HelpCircle, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { RadarChartSVG } from '../components/RadarChartSVG';
 import { PRESET_DEMO_CASES } from '../data/presetDemos';
@@ -7,6 +7,7 @@ import type {
   DeconstructedRequirement,
   PresetDemoCase,
   RequirementInput,
+  SpecProvenance,
 } from '../types/sartoria';
 
 interface RequirementStudioProps {
@@ -18,6 +19,12 @@ interface RequirementStudioProps {
   onRunDeconstruct: () => void;
   onProceedToConfigurator: () => void;
 }
+
+const PROVENANCE_META: Record<SpecProvenance, { label: string; className: string }> = {
+  user_explicit: { label: '用户明确', className: 'prov-user' },
+  system_suggested: { label: '系统建议', className: 'prov-ai' },
+  needs_human_verification: { label: '待人工核实', className: 'prov-human' },
+};
 
 export function RequirementStudio({
   input,
@@ -33,14 +40,19 @@ export function RequirementStudio({
   return (
     <div className="page-wrap">
       <div className="page-head">
-        <h1 className="page-h1">定制需求拆解</h1>
+        <div>
+          <h1 className="page-h1">定制需求拆解</h1>
+          <div style={{ fontSize: 12.5, color: 'var(--ink-muted)', marginTop: 4 }}>
+            自然语言需求 → 8 项专业转译 + 6 维审美标签 · 严格区分「用户明确 / 系统建议 / 人工核实」
+          </div>
+        </div>
         <button type="button" className="btn-black" onClick={onProceedToConfigurator}>
           <span>进入场景选配</span>
           <ArrowRight size={15} />
         </button>
       </div>
 
-      {/* Quick Case Selector Pills — Official 4 Cases + Corporate & Evening */}
+      {/* Quick Case Selector Pills — Primary Demo Case 6 + Case 3 Two-Piece + Additional Cases */}
       <div className="case-chip-row" role="group" aria-label="快速体验案例">
         {PRESET_DEMO_CASES.map((demo) => (
           <button
@@ -72,12 +84,12 @@ export function RequirementStudio({
           <textarea
             id="req-narrative"
             className="clean-textarea"
-            style={{ minHeight: 156, fontSize: 14 }}
+            style={{ minHeight: 164, fontSize: 14 }}
             value={input.rawNarrative}
             onChange={(e) =>
               onChangeInput({ ...input, rawNarrative: e.target.value, presetDemoId: undefined })
             }
-            placeholder="例如：想要定制一件中式正式外套，脖子短领子不能太高，有肚腩希望宽松舒服一些..."
+            placeholder="例如：想要定制一件简约大气的新中式外套，正式一些，身形偏高肩背宽厚，希望不压肩不卡手臂，宽松有质感..."
           />
 
           <div
@@ -189,9 +201,7 @@ export function RequirementStudio({
                   <select
                     className="clean-select"
                     value={input.targetSceneId}
-                    onChange={(e) =>
-                      onChangeInput({ ...input, targetSceneId: e.target.value })
-                    }
+                    onChange={(e) => onChangeInput({ ...input, targetSceneId: e.target.value })}
                   >
                     {SCENES.map((s) => (
                       <option key={s.id} value={s.id}>
@@ -218,7 +228,7 @@ export function RequirementStudio({
             }}
           >
             <div>
-              <h2 style={{ fontSize: 15, fontWeight: 600 }}>专业语言转化</h2>
+              <h2 style={{ fontSize: 15, fontWeight: 600 }}>专业语言转化与六维审美</h2>
               <div style={{ fontSize: 12, color: 'var(--ink-muted)', marginTop: 2 }}>
                 {deconstructed.aestheticArchetype}
               </div>
@@ -249,15 +259,21 @@ export function RequirementStudio({
           {outputTab === 'official8' ? (
             <>
               <div className="spec-8-grid">
-                {deconstructed.officialSpecs.map((item) => (
-                  <div key={item.key} className="spec-cell">
-                    <div className="spec-cell-head">
-                      <span className="spec-label">【{item.label}】</span>
-                      {item.ergonomicCue && <span className="spec-cue">{item.ergonomicCue}</span>}
+                {deconstructed.officialSpecs.map((item) => {
+                  const prov = PROVENANCE_META[item.provenance ?? 'system_suggested'];
+                  return (
+                    <div key={item.key} className="spec-cell">
+                      <div className="spec-cell-head">
+                        <span className="spec-label">【{item.label}】</span>
+                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                          <span className={`prov-pill ${prov.className}`}>{prov.label}</span>
+                          {item.ergonomicCue && <span className="spec-cue">{item.ergonomicCue}</span>}
+                        </div>
+                      </div>
+                      <div className="spec-value">{item.value}</div>
                     </div>
-                    <div className="spec-value">{item.value}</div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div
@@ -273,12 +289,12 @@ export function RequirementStudio({
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {deconstructed.emotionTags.slice(0, 4).map((tag) => (
                     <span key={tag} className="tag-minimal">
-                      {tag}
+                      #{tag}
                     </span>
                   ))}
                 </div>
                 <button type="button" className="btn-outline" onClick={onProceedToConfigurator}>
-                  <span>带入选配预览</span>
+                  <span>检索四类资产并选配</span>
                   <ArrowRight size={14} />
                 </button>
               </div>
@@ -329,6 +345,71 @@ export function RequirementStudio({
           )}
         </section>
       </div>
+
+      {/* Explicit 3-Bucket Epistemic Boundary Separation Panel */}
+      <section className="surface-card" style={{ marginTop: 24 }} aria-label="需求归属与人工核实边界">
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 12,
+            marginBottom: 16,
+            flexWrap: 'wrap',
+          }}
+        >
+          <div>
+            <h2 style={{ fontSize: 15, fontWeight: 600 }}>三类信息分离（事实 / 建议 / 人工核实）</h2>
+            <div style={{ fontSize: 12, color: 'var(--ink-muted)', marginTop: 2 }}>
+              严格避免 AI 越界替客户拍板：颜色未指定不代客确定，松弛余量不凭空报具体厘米数
+            </div>
+          </div>
+          {!deconstructed.colorSpecifiedByUser && (
+            <span className="prov-pill prov-human">客户未指定色彩 · 保留人工核色</span>
+          )}
+        </div>
+
+        <div className="bucket-3-grid">
+          <div className="bucket-col bucket-user">
+            <div className="bucket-head">
+              <CheckCircle2 size={14} />
+              <span>用户明确说的</span>
+              <span className="bucket-count">{deconstructed.threeBuckets.userExplicit.length}</span>
+            </div>
+            <ul className="bucket-list">
+              {deconstructed.threeBuckets.userExplicit.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="bucket-col bucket-ai">
+            <div className="bucket-head">
+              <Sparkles size={14} />
+              <span>系统建议的（企划参考）</span>
+              <span className="bucket-count">{deconstructed.threeBuckets.systemSuggested.length}</span>
+            </div>
+            <ul className="bucket-list">
+              {deconstructed.threeBuckets.systemSuggested.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="bucket-col bucket-human">
+            <div className="bucket-head">
+              <HelpCircle size={14} />
+              <span>还要人工核实的（不可越界）</span>
+              <span className="bucket-count">{deconstructed.threeBuckets.needsHumanVerification.length}</span>
+            </div>
+            <ul className="bucket-list">
+              {deconstructed.threeBuckets.needsHumanVerification.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
