@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempDisposableSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, expect, test, vi } from 'vitest';
@@ -140,11 +140,12 @@ function loadBaseline(cache: string) {
 }
 
 const reportDirectory = resolve('node_modules/.cache/sartoria-baseline');
-let scratch: ReturnType<typeof mkdtempDisposableSync>;
+let scratch: { path: string; remove: () => void };
 let baseline: ReturnType<typeof loadBaseline>;
 beforeAll(() => {
   mkdirSync(reportDirectory, { recursive: true });
-  scratch = mkdtempDisposableSync(join(reportDirectory, 'run-'));
+  const dir = mkdtempSync(join(reportDirectory, 'run-'));
+  scratch = { path: dir, remove: () => rmSync(dir, { recursive: true, force: true }) };
   baseline = loadBaseline(scratch.path);
 });
 afterAll(() => scratch?.remove());

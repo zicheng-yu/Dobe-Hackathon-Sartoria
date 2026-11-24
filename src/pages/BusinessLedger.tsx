@@ -212,15 +212,15 @@ export function BusinessLedger({
         </div>
       </div>
 
-      {selected?.decisionHistory && <VersionHandoff key={selected.id} history={selected.decisionHistory} />}
-
-      <div className="ledger-split">
-        <section className="surface-card" style={{ padding: 0, overflow: 'hidden' }}>
+      <div className="ledger-stack">
+        {/* Top: Full-Width Project Archive Table */}
+        <section className="surface-card" style={{ padding: 0, overflow: 'hidden' }} aria-label="项目档案列表">
           <div style={{ overflowX: 'auto' }}>
             <table className="clean-table">
               <thead>
                 <tr>
                   <th>项目</th>
+                  <th>客户</th>
                   <th>匹配资产</th>
                   <th>匹配分</th>
                   <th>状态</th>
@@ -242,8 +242,8 @@ export function BusinessLedger({
                       }
                     >
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                          <span style={{ fontWeight: 600 }}>{rec.projectName}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <span style={{ fontWeight: 590 }}>{rec.projectName}</span>
                           {isNewlyArchived && (
                             <span className="meta-badge">
                               <span className="status-dot dot-pass" />
@@ -251,19 +251,19 @@ export function BusinessLedger({
                             </span>
                           )}
                         </div>
-                        <div style={{ fontSize: 12, color: 'var(--ink-muted)', marginTop: 2 }}>
-                          {rec.projectCode} · {rec.clientName}
-                        </div>
                       </td>
-                      <td style={{ fontSize: 12.5, color: 'var(--ink-secondary)' }}>
-                        <div>{pat?.category ?? pat?.name ?? (rec.config ? '已选版型' : '暂无合格组合')}</div>
-                        <div style={{ color: 'var(--ink-muted)' }}>{fab?.shortName}</div>
+                      <td style={{ fontSize: 13, color: 'var(--ink-secondary)' }}>
+                        {rec.clientName}
+                      </td>
+                      <td style={{ fontSize: 13, color: 'var(--ink-secondary)' }}>
+                        <span>{pat?.category ?? pat?.name ?? (rec.config ? '已选版型' : '暂无合格组合')}</span>
+                        {fab?.shortName && <span style={{ color: 'var(--ink-muted)' }}> · {fab.shortName}</span>}
                       </td>
                       <td
                         style={{
                           fontFamily: 'var(--font-mono)',
                           fontVariantNumeric: 'tabular-nums',
-                          fontWeight: 600,
+                          fontWeight: 590,
                           whiteSpace: 'nowrap',
                         }}
                       >
@@ -280,22 +280,29 @@ export function BusinessLedger({
           </div>
         </section>
 
+        {/* Version Handoff (Full-Width when Selected Record Has Decision History) */}
+        {selected?.decisionHistory && <VersionHandoff key={selected.id} history={selected.decisionHistory} />}
+
+        {/* Bottom: Balanced Full-Width 2-Column Project Detail & Review Workspace */}
         {selected && (
-          <aside className="surface-card" aria-label="档案详情与追溯">
+          <section className="surface-card" aria-label="档案详情与追溯">
             <div
               style={{
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                gap: 10,
+                alignItems: 'center',
+                gap: 12,
+                paddingBottom: 16,
                 marginBottom: 16,
+                borderBottom: '1px solid var(--border-hairline)',
+                flexWrap: 'wrap',
               }}
             >
-              <div>
-                <div style={{ fontSize: 12, color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+                <h2 style={{ fontSize: 16, fontWeight: 590 }}>{selected.projectName}</h2>
+                <span style={{ fontSize: 12, color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>
                   {selected.projectCode}
-                </div>
-                <h2 style={{ fontSize: 16.5, fontWeight: 600, marginTop: 2 }}>{selected.projectName}</h2>
+                </span>
               </div>
               <button
                 type="button"
@@ -308,202 +315,204 @@ export function BusinessLedger({
               </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div className="ledger-block">
-                <div className="ledger-block-title">
-                  <span>原始需求</span>
-                  <span className="meta-badge">
-                    <span
-                      className={`status-dot ${
-                        selected.deconstructed.colorSpecifiedByUser ? 'dot-pass' : 'dot-caution'
-                      }`}
-                    />
-                    <span>{selected.deconstructed.colorSpecifiedByUser ? '已表达色彩' : '待人工核色'}</span>
-                  </span>
-                </div>
-                <p style={{ fontSize: 13, color: 'var(--ink-secondary)', lineHeight: 1.65 }}>
-                  “{selected.requirementInput.rawNarrative}”
-                </p>
-              </div>
-
-              <div className="ledger-block">
-                <div className="ledger-block-title">
-                  <span>匹配资产</span>
-                </div>
-                {selectedConfig ? <div className="ledger-asset-list">
-                  <div>
-                    <strong>版型：</strong>
-                    {selectedPattern ? selectedPattern.name : selectedConfig.patternId}
+            <div className="ledger-detail-grid">
+              {/* Left Column: Requirement + Matched Assets + Audit Log */}
+              <div className="ledger-detail-col">
+                <div className="ledger-block">
+                  <div className="ledger-block-title">
+                    <span>原始需求</span>
+                    <span className="meta-badge">
+                      <span
+                        className={`status-dot ${
+                          selected.deconstructed.colorSpecifiedByUser ? 'dot-pass' : 'dot-caution'
+                        }`}
+                      />
+                      <span>{selected.deconstructed.colorSpecifiedByUser ? '已表达色彩' : '待人工核色'}</span>
+                    </span>
                   </div>
-                  <div>
-                    <strong>面料：</strong>
-                    {selectedFabric ? selectedFabric.name : selectedConfig.fabricId}
-                  </div>
-                  <div>
-                    <strong>工艺：</strong>
-                    {selectedCrafts.length > 0
-                      ? selectedCrafts.map((c) => c.shortName).join(' / ')
-                      : '净面极简精工'}
-                  </div>
-                  <div>
-                    <strong>案例：</strong>
-                    {selectedCases.length > 0
-                      ? selectedCases.map((hc) => hc.title).join('；')
-                      : '—'}
-                  </div>
-                  <div>
-                    <strong>场景：</strong>
-                    {selectedScene?.shortName ?? selectedConfig.sceneId}
-                  </div>
-                </div> : <p>暂无合格组合。拒绝和待核依据已保存在版本交接内。</p>}
-              </div>
-
-              <div className="ledger-block no-print">
-                <div className="ledger-block-title">
-                  <span>人工复核与编辑</span>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
-                  <div>
-                    <label
-                      htmlFor="ledger-project-name"
-                      style={{ fontSize: 12, color: 'var(--ink-muted)', display: 'block', marginBottom: 4 }}
-                    >
-                      项目名称
-                    </label>
-                    <input
-                      id="ledger-project-name"
-                      className="clean-input"
-                      style={{ background: 'var(--bg-page)', padding: '8px 10px', fontSize: 13 }}
-                      value={draftProjectName}
-                      onChange={(e) => updateDraft({ projectName: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="ledger-client-name"
-                      style={{ fontSize: 12, color: 'var(--ink-muted)', display: 'block', marginBottom: 4 }}
-                    >
-                      客户称呼
-                    </label>
-                    <input
-                      id="ledger-client-name"
-                      className="clean-input"
-                      style={{ background: 'var(--bg-page)', padding: '8px 10px', fontSize: 13 }}
-                      value={draftClientName}
-                      onChange={(e) => updateDraft({ clientName: e.target.value })}
-                    />
-                  </div>
+                  <p style={{ fontSize: 13, color: 'var(--ink-secondary)', lineHeight: 1.65 }}>
+                    “{selected.requirementInput.rawNarrative}”
+                  </p>
                 </div>
 
-                <div style={{ marginBottom: 8 }}>
-                  <label
-                    htmlFor="ledger-status"
-                    style={{ fontSize: 12, color: 'var(--ink-muted)', display: 'block', marginBottom: 4 }}
-                  >
-                    复核状态
-                  </label>
-                  <select
-                    id="ledger-status"
-                    className="clean-select"
-                    style={{ background: 'var(--bg-page)', padding: '8px 10px', fontSize: 13 }}
-                    value={draftStatus}
-                    onChange={(e) => updateDraft({ status: e.target.value as LedgerReviewStatus })}
-                  >
-                    {STATUS_OPTIONS.map((st) => (
-                      <option key={st} value={st}>
-                        {st}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div style={{ marginBottom: 10 }}>
-                  <label
-                    htmlFor="ledger-notes"
-                    style={{ fontSize: 12, color: 'var(--ink-muted)', display: 'block', marginBottom: 4 }}
-                  >
-                    复核备注
-                  </label>
-                  <textarea
-                    id="ledger-notes"
-                    className="clean-textarea"
-                    style={{ background: 'var(--bg-page)', minHeight: 74, fontSize: 13, padding: '8px 10px' }}
-                    value={draftNotes}
-                    onChange={(e) => updateDraft({ specialistNotes: e.target.value })}
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  className="btn-black"
-                  style={{ width: '100%', padding: '9px 14px', fontSize: 13 }}
-                  disabled={!hasPendingEdits}
-                  onClick={handleSaveEdits}
-                >
-                  {savedFlag ? <Check size={14} /> : <Save size={14} />}
-                  <span>{savedFlag ? '已保存变更' : '保存并记录轨迹'}</span>
-                </button>
-              </div>
-
-              <div>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    fontSize: 12.5,
-                    fontWeight: 600,
-                    color: 'var(--ink-muted)',
-                    marginBottom: 10,
-                  }}
-                >
-                  <Clock size={13} />
-                  <span>变更记录 ({selected.auditLogs.length})</span>
-                </div>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 10,
-                    maxHeight: 240,
-                    overflowY: 'auto',
-                  }}
-                >
-                  {selected.auditLogs
-                    .slice()
-                    .reverse()
-                    .map((log) => (
-                      <div
-                        key={log.id}
-                        style={{
-                          borderLeft: '2px solid var(--border-medium)',
-                          paddingLeft: 10,
-                          fontSize: 12.5,
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                          <strong>
-                            {log.stage} · {log.action}
-                          </strong>
-                          <span style={{ fontSize: 11.5, color: 'var(--ink-muted)', flexShrink: 0 }}>
-                            {new Date(log.timestamp).toLocaleTimeString('zh-CN', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </span>
-                        </div>
-                        {log.diffSummary && (
-                          <div className="diff-pill" style={{ marginTop: 4 }}>
-                            {log.diffSummary}
-                          </div>
-                        )}
+                <div className="ledger-block">
+                  <div className="ledger-block-title">
+                    <span>匹配资产</span>
+                  </div>
+                  {selectedConfig ? (
+                    <div className="ledger-asset-list">
+                      <div>
+                        <strong>版型：</strong>
+                        {selectedPattern ? selectedPattern.name : selectedConfig.patternId}
                       </div>
-                    ))}
+                      <div>
+                        <strong>面料：</strong>
+                        {selectedFabric ? selectedFabric.name : selectedConfig.fabricId}
+                      </div>
+                      <div>
+                        <strong>工艺：</strong>
+                        {selectedCrafts.length > 0
+                          ? selectedCrafts.map((c) => c.shortName).join(' / ')
+                          : '净面极简精工'}
+                      </div>
+                      <div>
+                        <strong>案例：</strong>
+                        {selectedCases.length > 0
+                          ? selectedCases.map((hc) => hc.title).join('；')
+                          : '—'}
+                      </div>
+                      <div>
+                        <strong>场景：</strong>
+                        {selectedScene?.shortName ?? selectedConfig.sceneId}
+                      </div>
+                    </div>
+                  ) : (
+                    <p style={{ fontSize: 13, color: 'var(--ink-secondary)' }}>
+                      暂无合格组合。拒绝和待核依据已保存在版本交接内。
+                    </p>
+                  )}
+                </div>
+
+                <div className="ledger-block">
+                  <div className="ledger-block-title" style={{ justifyContent: 'flex-start', gap: 6 }}>
+                    <Clock size={13} />
+                    <span>变更记录 ({selected.auditLogs.length})</span>
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 10,
+                      maxHeight: 220,
+                      overflowY: 'auto',
+                    }}
+                  >
+                    {selected.auditLogs
+                      .slice()
+                      .reverse()
+                      .map((log) => (
+                        <div
+                          key={log.id}
+                          style={{
+                            borderLeft: '2px solid var(--border-medium)',
+                            paddingLeft: 10,
+                            fontSize: 12.5,
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                            <strong style={{ fontWeight: 510 }}>
+                              {log.stage} · {log.action}
+                            </strong>
+                            <span style={{ fontSize: 11.5, color: 'var(--ink-muted)', flexShrink: 0 }}>
+                              {new Date(log.timestamp).toLocaleTimeString('zh-CN', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                          </div>
+                          {log.diffSummary && (
+                            <div className="diff-pill" style={{ marginTop: 4 }}>
+                              {log.diffSummary}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Human Review & Edit Form */}
+              <div className="ledger-detail-col no-print">
+                <div className="ledger-block">
+                  <div className="ledger-block-title">
+                    <span>人工复核与编辑</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                    <div>
+                      <label
+                        htmlFor="ledger-project-name"
+                        style={{ fontSize: 12, color: 'var(--ink-muted)', display: 'block', marginBottom: 4 }}
+                      >
+                        项目名称
+                      </label>
+                      <input
+                        id="ledger-project-name"
+                        className="clean-input"
+                        style={{ background: 'var(--bg-page)', padding: '8px 10px', fontSize: 13 }}
+                        value={draftProjectName}
+                        onChange={(e) => updateDraft({ projectName: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="ledger-client-name"
+                        style={{ fontSize: 12, color: 'var(--ink-muted)', display: 'block', marginBottom: 4 }}
+                      >
+                        客户称呼
+                      </label>
+                      <input
+                        id="ledger-client-name"
+                        className="clean-input"
+                        style={{ background: 'var(--bg-page)', padding: '8px 10px', fontSize: 13 }}
+                        value={draftClientName}
+                        onChange={(e) => updateDraft({ clientName: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: 10 }}>
+                    <label
+                      htmlFor="ledger-status"
+                      style={{ fontSize: 12, color: 'var(--ink-muted)', display: 'block', marginBottom: 4 }}
+                    >
+                      复核状态
+                    </label>
+                    <select
+                      id="ledger-status"
+                      className="clean-select"
+                      style={{ background: 'var(--bg-page)', padding: '8px 10px', fontSize: 13 }}
+                      value={draftStatus}
+                      onChange={(e) => updateDraft({ status: e.target.value as LedgerReviewStatus })}
+                    >
+                      {STATUS_OPTIONS.map((st) => (
+                        <option key={st} value={st}>
+                          {st}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div style={{ marginBottom: 12 }}>
+                    <label
+                      htmlFor="ledger-notes"
+                      style={{ fontSize: 12, color: 'var(--ink-muted)', display: 'block', marginBottom: 4 }}
+                    >
+                      复核备注
+                    </label>
+                    <textarea
+                      id="ledger-notes"
+                      className="clean-textarea"
+                      style={{ background: 'var(--bg-page)', minHeight: 112, fontSize: 13, padding: '8px 10px' }}
+                      value={draftNotes}
+                      onChange={(e) => updateDraft({ specialistNotes: e.target.value })}
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    className="btn-black"
+                    style={{ width: '100%', padding: '9px 14px', fontSize: 13 }}
+                    disabled={!hasPendingEdits}
+                    onClick={handleSaveEdits}
+                  >
+                    {savedFlag ? <Check size={14} /> : <Save size={14} />}
+                    <span>{savedFlag ? '已保存变更' : '保存并记录轨迹'}</span>
+                  </button>
                 </div>
               </div>
             </div>
-          </aside>
+          </section>
         )}
       </div>
     </div>

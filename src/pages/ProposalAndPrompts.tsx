@@ -110,8 +110,8 @@ export function ProposalAndPrompts({
         </div>
       </div>
 
-      <div className="proposal-grid">
-        {/* Left: Unified Editorial Proposal Sheet */}
+      <div className="proposal-stack">
+        {/* Top: Full-Width Editorial Proposal Sheet */}
         <article className="dossier-sheet" aria-label="定制方案初稿">
           <div className="dossier-top">
             <div>
@@ -127,20 +127,20 @@ export function ProposalAndPrompts({
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: '1.35fr 1fr',
-              gap: 10,
+              gridTemplateColumns: '1.45fr 1fr',
+              gap: 12,
               marginBottom: 24,
             }}
           >
             <img
               src={heroPreviewImage}
               alt="方案场景意向"
-              style={{ width: '100%', height: 184, objectFit: 'cover', borderRadius: 10 }}
+              style={{ width: '100%', height: 236, objectFit: 'cover', borderRadius: 10 }}
             />
             <img
               src={craftPreviewImage}
               alt="工艺细节意向"
-              style={{ width: '100%', height: 184, objectFit: 'cover', borderRadius: 10 }}
+              style={{ width: '100%', height: 236, objectFit: 'cover', borderRadius: 10 }}
             />
           </div>
 
@@ -184,10 +184,10 @@ export function ProposalAndPrompts({
             </div>
           </section>
 
-          {/* Unified 8-Spec Soft Cards */}
+          {/* 4-Column Compact 8-Spec Soft Cards */}
           <section className="dossier-sec">
             <h3 className="dossier-sec-h3">8 项定制参数</h3>
-            <div className="spec-8-grid">
+            <div className="proposal-spec-4-grid">
               {proposal.officialSpecs.map((spec) => {
                 const prov = PROVENANCE_LABEL[spec.provenance ?? 'system_suggested'];
                 return (
@@ -211,10 +211,10 @@ export function ProposalAndPrompts({
             </div>
           </section>
 
-          {/* Unified Asset Match Basis + 3-Dimension Rationale */}
+          {/* 2-Column Balanced Asset Match Basis + 3-Dimension Rationale */}
           <section className="dossier-sec">
             <h3 className="dossier-sec-h3">搭配依据</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 10 }}>
+            <div className="proposal-basis-grid">
               {proposal.resourceBasis.map((res) => (
                 <div key={`${res.assetType}-${res.code}`} className="sub-card">
                   <div
@@ -314,8 +314,8 @@ export function ProposalAndPrompts({
           </details>
         </article>
 
-        {/* Right: Integrated 3-Shot Visual Direction */}
-        <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {/* Bottom: Balanced 3-Column Visual Triptych */}
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }} aria-label="三镜头视觉意向">
           <div
             style={{
               display: 'flex',
@@ -323,7 +323,7 @@ export function ProposalAndPrompts({
               alignItems: 'center',
               gap: 10,
               flexWrap: 'wrap',
-              padding: '2px 2px 0',
+              padding: '4px 2px 0',
             }}
           >
             <h2 style={{ fontSize: 15, fontWeight: 590 }}>三镜头视觉意向</h2>
@@ -360,41 +360,43 @@ export function ProposalAndPrompts({
             </div>
           </div>
 
-          {promptPack.shots.map((shot) => {
-            const activePrompt = shot.prompts[toolFormat];
-            const copyKey = `${shot.shotType}-${toolFormat}`;
-            return (
-              <div key={shot.shotType} className="surface-card" style={{ padding: 20 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-                  <div style={{ fontSize: 14.5, fontWeight: 600 }}>{shot.shotTitle}</div>
-                  <button
-                    type="button"
-                    className="btn-outline no-print"
-                    style={{ padding: '5px 12px', fontSize: 12.5 }}
-                    onClick={() => handleCopy(copyKey, activePrompt)}
-                  >
-                    {copiedId === copyKey ? <Check size={13} /> : <Copy size={13} />}
-                    <span>{copiedId === copyKey ? '已复制' : '复制'}</span>
-                  </button>
-                </div>
-
-                <div className="prompt-box">{activePrompt}</div>
-
-                <details className="disclosure" style={{ marginTop: 10, paddingTop: 8 }}>
-                  <summary>
-                    <span>镜头与负向参数</span>
-                    <ChevronDown size={13} />
-                  </summary>
-                  <div style={{ fontSize: 12, color: 'var(--ink-muted)', marginTop: 6, lineHeight: 1.6 }}>
-                    <div>
-                      {shot.aspectRatio} · {shot.cameraSpec}
-                    </div>
-                    <div style={{ marginTop: 3 }}>Negative：{shot.negativePrompt}</div>
+          <div className="proposal-shots-3-grid">
+            {promptPack.shots.map((shot) => {
+              const activePrompt = shot.prompts[toolFormat];
+              const copyKey = `${shot.shotType}-${toolFormat}`;
+              return (
+                <div key={shot.shotType} className="surface-card proposal-shot-card">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                    <div style={{ fontSize: 14, fontWeight: 590 }}>{shot.shotTitle}</div>
+                    <button
+                      type="button"
+                      className="btn-outline no-print"
+                      style={{ padding: '4px 10px', fontSize: 12 }}
+                      onClick={() => handleCopy(copyKey, activePrompt)}
+                    >
+                      {copiedId === copyKey ? <Check size={13} /> : <Copy size={13} />}
+                      <span>{copiedId === copyKey ? '已复制' : '复制'}</span>
+                    </button>
                   </div>
-                </details>
-              </div>
-            );
-          })}
+
+                  <div className="prompt-box">{activePrompt}</div>
+
+                  <details className="disclosure" style={{ marginTop: 10, paddingTop: 8 }}>
+                    <summary>
+                      <span>镜头与负向参数</span>
+                      <ChevronDown size={13} />
+                    </summary>
+                    <div style={{ fontSize: 12, color: 'var(--ink-muted)', marginTop: 6, lineHeight: 1.6 }}>
+                      <div>
+                        {shot.aspectRatio} · {shot.cameraSpec}
+                      </div>
+                      <div style={{ marginTop: 3 }}>Negative：{shot.negativePrompt}</div>
+                    </div>
+                  </details>
+                </div>
+              );
+            })}
+          </div>
         </section>
       </div>
 
