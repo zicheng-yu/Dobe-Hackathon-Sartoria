@@ -1,26 +1,42 @@
-# Sartoria AI — 海派高定与团体职业服 AI 企划辅助 Agent
+# Sartoria AI — 海派高定与团体职业服 AI 企划辅助系统
 
-> **赛道与命题**：FDE 赛道 · 上海服装集团 · 服装板块｜海派高定与团体职业服 AI 企划辅助  
-> **在线访问（Cloudflare Workers × GitHub 自动同步构建）**：
-> - **官网总览**：https://sartoria.zichengyu.com
-> - **在线 Demo 工作台**：https://sartoria.zichengyu.com/demo
-> - **3 分钟演示视频页**：https://sartoria.zichengyu.com/video（兼容 `/vedio`）
-> - **在线项目介绍文档**：https://sartoria.zichengyu.com/docs
+> 面向高级定制企划人员、定制业务专员与团体职业服方案设计师的前置 AI 企划决策工作台。  
+> 将客户感性自然语言需求转化为可溯源的定制约束、可验证的资产组合方案、三镜头视觉需求包与版本化交接档案。
+>
+> - **在线官网**：https://sartoria.zichengyu.com
+> - **在线工作台**：https://sartoria.zichengyu.com/demo
+> - **演示视频**：https://sartoria.zichengyu.com/video（兼容 `/vedio`）
+> - **系统架构文档**：https://sartoria.zichengyu.com/docs
 > - **GitHub 仓库**：https://github.com/zicheng-yu/Dobe-Hackathon-Sartoria
 
----
-
-## 核心交付闭环
-
-1. **需求拆解与三类信息分离（`/demo`）**：将客户自然语言拆解为官方 **8 项专业定制参数** + **6 维审美雷达**，严格分离「**用户明确说的 / 系统建议的 / 还要人工核实的**」——客户未指定颜色绝不代客定色，松弛余量不凭空报具体厘米数。
-2. **静态模拟目录与选配**（`/demo/configurator`、`/demo/knowledge`）按客户硬条件筛选 36 条在用记录，含 9 款版型、13 款面料、11 项工艺与 3 个参考案例。选配提供场景参考图、Three.js 面料光泽预览、SVG 结构图以及逐项证据。其余历史案例可在知识库查阅。
-3. **带资源依据的方案初稿与三镜头视觉需求包（`/demo/proposal`）**：输出含四类资产编码依据、面料三维判断依据（风格适配 / 体感适配 / 体型适配）、六步人机分工与人工终审清单的方案初稿（支持导出 Markdown / 打印），以及成衣 / 细节 / 上身氛围三镜头 Midjourney / Flux / 即梦提示词包（不接外部绘图 API）。
-4. **可编辑、可回看、可导出业务台账（`/demo/ledger`）**：回看原始需求、四类匹配静态资产与全流程修改前后 `diffSummary`，支持人工编辑状态与备注并一键导出 UTF-8 BOM CSV / JSON / 打印报告。
-5. **完整项目说明与独立《Agent 能力边界清单》**：详见 [docs/Sartoria-AI-Solution-Architecture.md](./docs/Sartoria-AI-Solution-Architecture.md)（已同步在线渲染于 `/docs`）。
+![Sartoria AI 首页总览与四步企划工作流](./public/assets/docs/sartoria-home.png)
 
 ---
 
-## 快速启动与验证
+## 核心能力闭环
+
+1. **双引擎需求拆解与三类信息隔离（`/demo`）**  
+   支持云端严格 Schema 智能解析（Cloudflare Worker + OpenAI Responses API）与零 Key 本地确定性规则引擎无缝协同，将自然语言口述转化为 **8 项专业定制参数** + **6 维审美雷达**，严格分离「**用户明确 / 系统建议 / 人工核实**」并保留逐字原话引文——未指定颜色绝不代客定色，松弛余量不虚构厘米数值。
+2. **硬筛方案对比、多轮改稿与混合可视化选配（`/demo/configurator`、`/demo/knowledge`）**  
+   基于 36 条在用静态模拟定制资产（9 款版型、13 款在用面料、11 项工艺、3 个参考案例，可扩展 `stylePackId` 企业风格包）执行硬约束筛选与 A/B 组合对比，透明披露逐项证据、拒绝与待核依据；支持多轮自然语言客户改稿预览、分支裁决与不可变版本号递进（`V1 → V2`），配合 6 大实景场景切换、工艺热点缩放、Three.js PBR 3D 面料光泽参考与 SVG 结构蓝图。
+3. **带依据定制方案初稿与三镜头视觉需求包（`/demo/proposal`）**  
+   一键生成含四类资产匹配依据、面料三维判断依据（风格适配 / 体感适配 / 体型适配）、五维可行性护栏与六步人机分工的《定制方案初稿》（支持导出 Markdown 与排版打印），同步编译成衣 / 细节 / 上身氛围三镜头提示词包（即梦中文 / Midjourney / Flux，不调用外部绘图 API）。
+4. **版本化项目档案与标准化交接（`/demo/ledger`）**  
+   沉淀原始需求、版本快照、人工复核状态/备注与显式前后变更 `diffSummary`，支持按任意已选版本导出 `sartoria_handoff_v1` JSON、UTF-8 BOM CSV、Markdown 交接文档及一键回载至选配工作台。
+5. **完整系统架构与人机能力边界说明**  
+   详见 [docs/Sartoria-AI-Solution-Architecture.md](./docs/Sartoria-AI-Solution-Architecture.md)（已在线同步渲染于 `/docs`，支持 Mermaid 架构图与实机图文浏览）与跨模块数据合同 [docs/decision-contract.md](./docs/decision-contract.md)。
+
+---
+
+## 技术栈与边缘架构
+
+- **前端应用**：TypeScript · React 19 · Vite 8 · Three.js · Framer Motion · Mermaid（文档页按需懒加载）
+- **边缘服务与配额治理**：Cloudflare Workers（`/api/llm/status`、`/api/deconstruct`）· Cloudflare Durable Objects SQLite（`QuotaBudgetLedger` 原子日限流与项目累计预算硬顶）· Workers Static Assets SPA 托管
+- **工程质量保障**：22 个测试文件、282 项 Vitest 自动化测试（含多批次盲测回归、色彩作用域、云端响应离线回放与 Worker 配额安全单测）+ 离线 Chromium 端到端回归套件（`evaluation/browser/`）
+
+---
+
+## 本地开发与验证
 
 环境要求：Node.js `>= 22`
 
@@ -28,24 +44,25 @@
 # 1. 安装依赖
 npm install
 
-# 2. 启动本地开发服务器
+# 2. 启动前端本地开发服务器（离线可用本地规则引擎）
 npm run dev
 
-# 3. 运行核心引擎与路由自动化测试
-npm test
+# 3. 如需联调本地 Cloudflare Worker 与 Durable Objects
+npm run dev:worker
 
-# 4. 代码检查与生产构建
+# 4. 运行自动化测试与回归验证
+npm test
+npm run test:release
+
+# 5. 代码检查、类型检查与生产构建
 npm run lint
 npm run build
 ```
 
-> 默认开启 **零 Key 本地领域语义引擎**，离线即可稳定完整演示；如需体验自由文案大模型增强解析，可在 `/demo` 右上角 **「本地引擎」** 临时配置 OpenAI 兼容 API。
-
 ---
 
-## Cloudflare Workers 部署与 GitHub 同步
+## 部署与自动构建
 
-- 配置文件：[wrangler.jsonc](./wrangler.jsonc)（Workers Static Assets + `not_found_handling: "single-page-application"`）。
-- 构建与发布命令：`npm run build` → `npx wrangler deploy`。
-- 已接入 Cloudflare Workers Builds，监听本仓库 `main` 分支：每次合并或推送 `main` 后自动构建并同步上线至 `https://sartoria.zichengyu.com`。
-- 更新 3 分钟 Demo 视频：录制上传至 B 站 / 腾讯视频 / YouTube（公开无密码直链）后，编辑 [src/data/siteConfig.ts](./src/data/siteConfig.ts) 中的 `video.externalUrl` / `video.embedUrl` 并推送 `main` 即可自动生效。
+- 配置文件：[wrangler.jsonc](./wrangler.jsonc)（`assets.run_worker_first: ["/api/*"]` + `not_found_handling: "single-page-application"` + Durable Objects `QuotaBudgetLedger`）。
+- 构建与发布：`npm run build` → `npx wrangler deploy`（或通过已绑定的 Cloudflare Workers Builds 监听 `main` 分支，推送后自动构建并同步上线至 `https://sartoria.zichengyu.com`）。
+- 如需更新演示视频直链，编辑 [src/data/siteConfig.ts](./src/data/siteConfig.ts) 中的 `video.externalUrl` / `video.embedUrl` 后推送 `main` 即可自动生效。

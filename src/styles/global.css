@@ -1923,6 +1923,73 @@ button {
   gap: 6px;
 }
 
+.doc-list-sub {
+  margin-left: 18px;
+  list-style-type: circle;
+}
+
+.doc-mermaid-card {
+  margin: 18px 0 24px;
+  padding: 20px 18px;
+  border-radius: 12px;
+  border: 1px solid var(--border-hairline);
+  background: var(--bg-subtle);
+  overflow-x: auto;
+}
+
+.doc-mermaid-svg {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.doc-mermaid-svg svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.doc-mermaid-loading {
+  text-align: center;
+  padding: 28px 12px;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.doc-figure {
+  margin: 18px 0 24px;
+  padding: 0;
+  border-radius: 12px;
+  border: 1px solid var(--border-hairline);
+  background: var(--bg-page);
+  overflow: hidden;
+  box-shadow: var(--shadow-float);
+}
+
+.doc-figure-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: var(--bg-canvas);
+}
+
+.doc-figcaption {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border-hairline);
+  background: var(--bg-canvas);
+  font-size: 12.5px;
+  color: var(--ink-secondary);
+  line-height: 1.5;
+}
+
+.doc-inline-img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border-hairline);
+  vertical-align: middle;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

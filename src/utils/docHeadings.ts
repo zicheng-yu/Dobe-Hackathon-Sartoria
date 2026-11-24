@@ -20,7 +20,7 @@ export function extractDocHeadings(markdown: string): DocHeading[] {
     if (m) {
       counter += 1;
       const level = m[1].length as 2 | 3;
-      const text = m[2].replace(/\*\*/g, '').trim();
+      const text = m[2].replace(/\*\*/g, '').replace(/`/g, '').trim();
       headings.push({ id: `sec-${counter}`, level, text });
     }
   }

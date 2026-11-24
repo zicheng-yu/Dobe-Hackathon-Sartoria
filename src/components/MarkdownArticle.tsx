@@ -1,8 +1,35 @@
 import type { ReactNode } from 'react';
+import { SITE_CONFIG } from '../data/siteConfig';
+import { MermaidDiagram } from './MermaidDiagram';
+
+function resolveDocLinkHref(rawHref: string): { href: string; isExternal: boolean } {
+  const trimmed = rawHref.trim();
+  if (/^https?:\/\//i.test(trimmed)) {
+    return { href: trimmed, isExternal: true };
+  }
+  if (/^\.\/[^#]+\.md(?:#.*)?$/i.test(trimmed)) {
+    return {
+      href: `${SITE_CONFIG.githubUrl}/blob/main/docs/${trimmed.slice(2)}`,
+      isExternal: true,
+    };
+  }
+  return { href: trimmed, isExternal: false };
+}
+
+function resolveDocImageSrc(rawSrc: string): string {
+  const trimmed = rawSrc.trim();
+  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('/')) {
+    return trimmed;
+  }
+  return trimmed
+    .replace(/^\.\.\/public\//, '/')
+    .replace(/^\.\/public\//, '/')
+    .replace(/^public\//, '/');
+}
 
 function renderInline(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
-  const pattern = /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g;
+  const pattern = /(!\[[^\]]*\]\([^)]+\)|\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
   let keyIdx = 0;
@@ -13,7 +40,22 @@ function renderInline(text: string): ReactNode[] {
     }
     const token = match[0];
     keyIdx += 1;
-    if (token.startsWith('**') && token.endsWith('**')) {
+    if (token.startsWith('![')) {
+      const im = /^!\[([^\]]*)\]\(([^)]+)\)$/.exec(token);
+      if (im) {
+        nodes.push(
+          <img
+            key={`img-${keyIdx}`}
+            src={resolveDocImageSrc(im[2])}
+            alt={im[1]}
+            className="doc-inline-img"
+            loading="lazy"
+          />
+        );
+      } else {
+        nodes.push(token);
+      }
+    } else if (token.startsWith('**') && token.endsWith('**')) {
       nodes.push(<strong key={`b-${keyIdx}`}>{token.slice(2, -2)}</strong>);
     } else if (token.startsWith('`') && token.endsWith('`')) {
       nodes.push(
@@ -25,8 +67,7 @@ function renderInline(text: string): ReactNode[] {
       const lm = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(token);
       if (lm) {
         const label = lm[1];
-        const href = lm[2];
-        const isExternal = /^https?:\/\//i.test(href);
+        const { href, isExternal } = resolveDocLinkHref(lm[2]);
         nodes.push(
           <a
             key={`a-${keyIdx}`}
@@ -60,6 +101,8 @@ function parseTableRow(line: string): string[] {
     .map((cell) => cell.trim());
 }
 
+const STANDALONE_IMAGE_RE = /^!\[([^\]]*)\]\(([^)]+)\)$/;
+
 export function MarkdownArticle({ markdown }: { markdown: string }) {
   const lines = markdown.split(/\r?\n/);
   const elements: ReactNode[] = [];
@@ -81,9 +124,25 @@ export function MarkdownArticle({ markdown }: { markdown: string }) {
       continue;
     }
 
-    // Fenced code block
+    // Standalone image -> semantic figure with caption
+    const imgMatch = STANDALONE_IMAGE_RE.exec(trimmed);
+    if (imgMatch) {
+      const alt = imgMatch[1].trim();
+      const src = resolveDocImageSrc(imgMatch[2]);
+      elements.push(
+        <figure key={`fig-${i}`} className="doc-figure">
+          <img src={src} alt={alt} className="doc-figure-img" loading="lazy" />
+          {alt && <figcaption className="doc-figcaption">{alt}</figcaption>}
+        </figure>
+      );
+      i += 1;
+      continue;
+    }
+
+    // Fenced code block (including Mermaid diagrams)
     if (trimmed.startsWith('```')) {
       const start = i;
+      const lang = trimmed.slice(3).trim().toLowerCase();
       i += 1;
       const codeLines: string[] = [];
       while (i < lines.length && !lines[i].trim().startsWith('```')) {
@@ -91,11 +150,16 @@ export function MarkdownArticle({ markdown }: { markdown: string }) {
         i += 1;
       }
       i += 1; // skip closing fence
-      elements.push(
-        <pre key={`code-${start}`} className="doc-code-block">
-          <code>{codeLines.join('\n')}</code>
-        </pre>
-      );
+      const codeText = codeLines.join('\n');
+      if (lang === 'mermaid') {
+        elements.push(<MermaidDiagram key={`mmd-${start}`} chart={codeText} />);
+      } else {
+        elements.push(
+          <pre key={`code-${start}`} className="doc-code-block">
+            <code>{codeText}</code>
+          </pre>
+        );
+      }
       continue;
     }
 
@@ -192,18 +256,24 @@ export function MarkdownArticle({ markdown }: { markdown: string }) {
       continue;
     }
 
-    // Unordered list
+    // Unordered list (supports one level of indented sub-items)
     if (/^[-*]\s+/.test(trimmed)) {
       const start = i;
-      const items: string[] = [];
+      const items: Array<{ text: string; nested: boolean }> = [];
       while (i < lines.length && /^[-*]\s+/.test(lines[i].trim())) {
-        items.push(lines[i].trim().replace(/^[-*]\s+/, ''));
+        const indent = lines[i].search(/\S/);
+        items.push({
+          text: lines[i].trim().replace(/^[-*]\s+/, ''),
+          nested: indent >= 2,
+        });
         i += 1;
       }
       elements.push(
         <ul key={`ul-${start}`} className="doc-list">
           {items.map((item, idx) => (
-            <li key={idx}>{renderInline(item)}</li>
+            <li key={idx} className={item.nested ? 'doc-list-sub' : undefined}>
+              {renderInline(item.text)}
+            </li>
           ))}
         </ul>
       );
@@ -238,6 +308,7 @@ export function MarkdownArticle({ markdown }: { markdown: string }) {
       !lines[i].trim().startsWith('>') &&
       !lines[i].trim().startsWith('|') &&
       !lines[i].trim().startsWith('```') &&
+      !STANDALONE_IMAGE_RE.test(lines[i].trim()) &&
       !/^[-*]\s+/.test(lines[i].trim()) &&
       !/^\d+\.\s+/.test(lines[i].trim()) &&
       lines[i].trim() !== '---'

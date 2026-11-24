@@ -35,7 +35,7 @@ export function OnlineDocsPage({ onNavigate }: OnlineDocsPageProps) {
             className="btn-outline"
             onClick={() =>
               downloadTextFile(
-                'Sartoria-AI-项目说明与命题响应文档.md',
+                'Sartoria-AI-系统架构与产品说明文档.md',
                 architectureMarkdown,
                 'text/markdown;charset=utf-8'
               )

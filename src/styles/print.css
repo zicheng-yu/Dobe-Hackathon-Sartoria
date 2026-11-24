@@ -21,4 +21,11 @@
     border: none !important;
     padding: 8px 0 !important;
   }
+
+  .doc-figure,
+  .doc-mermaid-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    box-shadow: none !important;
+  }
 }
