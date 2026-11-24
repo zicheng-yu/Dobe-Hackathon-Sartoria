@@ -135,9 +135,8 @@ export function LandingHome({
 
         <div className="portal-hero-visual">
           <img
-            src="/assets/official1-studio-jacket.jpg"
-            alt="Sartoria AI 海派定制企划参考"
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            src="/assets/atelier-studio-bespoke.jpg"
+            alt="Sartoria 海派高定工坊与裁剪台"
           />
         </div>
       </section>

@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight, Check, ChevronDown, Copy, Sparkles } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { StageViewport } from '../components/StageViewport';
 import { HISTORICAL_CASES } from '../data/cases';
 import { CRAFTS } from '../data/crafts';
@@ -8,8 +8,9 @@ import { FABRICS } from '../data/fabrics';
 import { PATTERNS } from '../data/patterns';
 import { SCENES } from '../data/scenes';
 import { colorReviewText } from '../engine/colorPresentation';
+import { evaluateDecisionConfiguration } from '../engine/decisionMatching';
 import type { ResolvedStageVisual } from '../engine/visualResolver';
-import type { CandidateCombination, MatchResult } from '../types/decisions';
+import type { CandidateCombination, DecisionRequirement, MatchResult } from '../types/decisions';
 import type {
   ConfigurationState,
   DeconstructedRequirement,
@@ -20,6 +21,7 @@ import type {
 
 interface ConfiguratorStudioProps {
   input: RequirementInput;
+  requirement: DecisionRequirement;
   deconstructed: DeconstructedRequirement;
   config: ConfigurationState;
   decisionMatch: MatchResult;
@@ -35,6 +37,7 @@ interface ConfiguratorStudioProps {
 
 export function ConfiguratorStudio({
   input,
+  requirement,
   deconstructed,
   config,
   decisionMatch,
@@ -66,18 +69,250 @@ export function ConfiguratorStudio({
   const selectedFabric = FABRICS.find((f) => f.id === config.fabricId) ?? FABRICS[0];
   const selectedScene = SCENES.find((s) => s.id === config.sceneId) ?? SCENES[0];
   const selectedCrafts = CRAFTS.filter((c) => config.craftIds.includes(c.id));
-  const approvedConfigs = [decisionMatch.recommended, decisionMatch.alternative].flatMap((option) => option ? [option.config] : []);
+  const approvedConfigs = useMemo(
+    () => [decisionMatch.recommended, decisionMatch.alternative].flatMap((option) => (option ? [option.config] : [])),
+    [decisionMatch]
+  );
+
+  // Compute ONLY strictly selectable (eligible) options so no unselectable pill ever appears
+  const fabricSelections = useMemo(() => {
+    const map = new Map<string, ConfigurationState>();
+    const patternMap = new Map(DECISION_CATALOG.patterns.map((entry) => [entry.asset.id, entry]));
+
+    for (const fabricEntry of DECISION_CATALOG.fabrics) {
+      const fabId = fabricEntry.asset.id;
+      if (fabId === config.fabricId) {
+        map.set(fabId, config);
+        continue;
+      }
+
+      const offered = approvedConfigs.find((option) => option.fabricId === fabId);
+      if (offered) {
+        const offeredConfig: ConfigurationState = {
+          ...config,
+          ...offered,
+          fabricId: fabId,
+          activeView: config.activeView,
+          focusedHotspotId: null,
+        };
+        if (evaluateDecisionConfiguration(requirement, offeredConfig).status === 'eligible') {
+          map.set(fabId, offeredConfig);
+          continue;
+        }
+      }
+
+      const directConfig: ConfigurationState = {
+        ...config,
+        fabricId: fabId,
+        activeView: config.activeView,
+        focusedHotspotId: null,
+      };
+      if (evaluateDecisionConfiguration(requirement, directConfig).status === 'eligible') {
+        map.set(fabId, directConfig);
+        continue;
+      }
+
+      let bestConfig: ConfigurationState | null = null;
+      let bestScore = -1;
+      const candidatePatternIds = [
+        config.patternId,
+        ...fabricEntry.profile.compatiblePatternIds.filter((pid) => pid !== config.patternId),
+      ];
+
+      for (const patId of candidatePatternIds) {
+        if (!fabricEntry.profile.compatiblePatternIds.includes(patId)) continue;
+        const patEntry = patternMap.get(patId);
+        if (!patEntry) continue;
+        const sceneCandidates = patEntry.asset.suitableScenes.includes(config.sceneId)
+          ? [config.sceneId, ...patEntry.asset.suitableScenes.filter((sid) => sid !== config.sceneId)]
+          : [...patEntry.asset.suitableScenes, config.sceneId];
+
+        for (const sceneId of sceneCandidates) {
+          for (const craftIds of patEntry.profile.craftPackages) {
+            const trial: ConfigurationState = {
+              patternId: patId,
+              fabricId: fabId,
+              craftIds: [...craftIds],
+              sceneId,
+              activeView: config.activeView,
+              focusedHotspotId: null,
+            };
+            const evaluated = evaluateDecisionConfiguration(requirement, trial);
+            if (evaluated.status === 'eligible' && evaluated.ruleScore > bestScore) {
+              bestScore = evaluated.ruleScore;
+              bestConfig = trial;
+            }
+          }
+        }
+      }
+
+      if (bestConfig) {
+        map.set(fabId, bestConfig);
+      }
+    }
+
+    return map;
+  }, [approvedConfigs, config, requirement]);
+
+  const patternSelections = useMemo(() => {
+    const map = new Map<string, ConfigurationState>();
+
+    for (const patEntry of DECISION_CATALOG.patterns) {
+      const patId = patEntry.asset.id;
+      if (patId === config.patternId) {
+        map.set(patId, config);
+        continue;
+      }
+
+      const offered = approvedConfigs.find((option) => option.patternId === patId);
+      if (offered) {
+        const offeredConfig: ConfigurationState = {
+          ...config,
+          ...offered,
+          patternId: patId,
+          activeView: config.activeView,
+          focusedHotspotId: null,
+        };
+        if (evaluateDecisionConfiguration(requirement, offeredConfig).status === 'eligible') {
+          map.set(patId, offeredConfig);
+          continue;
+        }
+      }
+
+      const preferredSceneId = patEntry.asset.suitableScenes.includes(config.sceneId)
+        ? config.sceneId
+        : patEntry.asset.suitableScenes[0] ?? config.sceneId;
+
+      const directConfig: ConfigurationState = {
+        ...config,
+        patternId: patId,
+        sceneId: preferredSceneId,
+        activeView: config.activeView,
+        focusedHotspotId: null,
+      };
+      if (evaluateDecisionConfiguration(requirement, directConfig).status === 'eligible') {
+        map.set(patId, directConfig);
+        continue;
+      }
+
+      let bestConfig: ConfigurationState | null = null;
+      let bestScore = -1;
+      const compatibleFabrics = DECISION_CATALOG.fabrics.filter((f) =>
+        f.profile.compatiblePatternIds.includes(patId)
+      );
+      const orderedFabrics = [
+        ...compatibleFabrics.filter((f) => f.asset.id === config.fabricId),
+        ...compatibleFabrics.filter((f) => f.asset.id !== config.fabricId),
+      ];
+      const sceneCandidates = patEntry.asset.suitableScenes.includes(config.sceneId)
+        ? [config.sceneId, ...patEntry.asset.suitableScenes.filter((sid) => sid !== config.sceneId)]
+        : [...patEntry.asset.suitableScenes, config.sceneId];
+
+      for (const fabEntry of orderedFabrics) {
+        for (const sceneId of sceneCandidates) {
+          for (const craftIds of patEntry.profile.craftPackages) {
+            const trial: ConfigurationState = {
+              patternId: patId,
+              fabricId: fabEntry.asset.id,
+              craftIds: [...craftIds],
+              sceneId,
+              activeView: config.activeView,
+              focusedHotspotId: null,
+            };
+            const evaluated = evaluateDecisionConfiguration(requirement, trial);
+            if (evaluated.status === 'eligible' && evaluated.ruleScore > bestScore) {
+              bestScore = evaluated.ruleScore;
+              bestConfig = trial;
+            }
+          }
+        }
+      }
+
+      if (bestConfig) {
+        map.set(patId, bestConfig);
+      }
+    }
+
+    return map;
+  }, [approvedConfigs, config, requirement]);
+
+  const eligibleCrafts = useMemo(
+    () =>
+      DECISION_CATALOG.crafts
+        .map(({ asset }) => asset)
+        .filter((craft) => {
+          if (config.craftIds.includes(craft.id)) return true;
+          const trial: ConfigurationState = {
+            ...config,
+            craftIds: [...config.craftIds, craft.id],
+            focusedHotspotId: null,
+          };
+          return evaluateDecisionConfiguration(requirement, trial).status === 'eligible';
+        }),
+    [config, requirement]
+  );
+
+  const lockedCraftIds = useMemo(() => {
+    const locked = new Set<string>();
+    for (const craftId of config.craftIds) {
+      const trial: ConfigurationState = {
+        ...config,
+        craftIds: config.craftIds.filter((id) => id !== craftId),
+        focusedHotspotId: null,
+      };
+      if (evaluateDecisionConfiguration(requirement, trial).status !== 'eligible') {
+        locked.add(craftId);
+      }
+    }
+    return locked;
+  }, [config, requirement]);
+
+  const eligibleFabrics = useMemo(
+    () => DECISION_CATALOG.fabrics.map(({ asset }) => asset).filter((fab) => fabricSelections.has(fab.id)),
+    [fabricSelections]
+  );
+
+  const eligiblePatterns = useMemo(
+    () => DECISION_CATALOG.patterns.map(({ asset }) => asset).filter((pat) => patternSelections.has(pat.id)),
+    [patternSelections]
+  );
+
   const quickFabricIds = new Set([config.fabricId, ...approvedConfigs.map((option) => option.fabricId)]);
   const quickPatternIds = new Set([config.patternId, ...approvedConfigs.map((option) => option.patternId)]);
-  const matchedSceneIds = [...new Set([config.sceneId, ...approvedConfigs.map((option) => option.sceneId)])];
-  const orderedScenes = SCENES.toSorted((first, second) =>
-    Number(matchedSceneIds.includes(second.id)) - Number(matchedSceneIds.includes(first.id)));
-  const allFabrics = DECISION_CATALOG.fabrics.map(({ asset }) => asset);
-  const allPatterns = DECISION_CATALOG.patterns.map(({ asset }) => asset);
-  const allCrafts = DECISION_CATALOG.crafts.map(({ asset }) => asset);
-  const visibleFabrics = showAllFabrics ? allFabrics : allFabrics.filter((fabric) => quickFabricIds.has(fabric.id));
-  const visiblePatterns = showAllPatterns ? allPatterns : allPatterns.filter((pattern) => quickPatternIds.has(pattern.id));
-  const visibleCrafts = showAllCrafts ? allCrafts : selectedCrafts;
+  const matchedSceneIds = useMemo(
+    () => [...new Set([config.sceneId, ...approvedConfigs.map((option) => option.sceneId)])],
+    [approvedConfigs, config.sceneId]
+  );
+
+  const orderedScenes = useMemo(
+    () =>
+      SCENES.filter(
+        (scene) =>
+          scene.id === config.sceneId ||
+          evaluateDecisionConfiguration(requirement, {
+            ...config,
+            sceneId: scene.id,
+            activeView: 'scene_look',
+            focusedHotspotId: null,
+          }).status === 'eligible'
+      ).toSorted(
+        (first, second) =>
+          Number(matchedSceneIds.includes(second.id)) - Number(matchedSceneIds.includes(first.id))
+      ),
+    [config, matchedSceneIds, requirement]
+  );
+
+  const quickFabrics = eligibleFabrics.filter((fabric) => quickFabricIds.has(fabric.id));
+  const hasExtraFabrics = eligibleFabrics.length > 4 && eligibleFabrics.length > quickFabrics.length;
+  const visibleFabrics = showAllFabrics || !hasExtraFabrics ? eligibleFabrics : quickFabrics;
+
+  const quickPatterns = eligiblePatterns.filter((pattern) => quickPatternIds.has(pattern.id));
+  const hasExtraPatterns = eligiblePatterns.length > 3 && eligiblePatterns.length > quickPatterns.length;
+  const visiblePatterns = showAllPatterns || !hasExtraPatterns ? eligiblePatterns : quickPatterns;
+
+  const hasExtraCrafts =
+    selectedCrafts.length > 0 && eligibleCrafts.length > 4 && eligibleCrafts.length > selectedCrafts.length;
+  const visibleCrafts = showAllCrafts || !hasExtraCrafts ? eligibleCrafts : selectedCrafts;
 
   const topNotice =
     feasibility.find((f) => f.level === 'risk') ??
@@ -89,27 +324,39 @@ export function ConfiguratorStudio({
     selectedPattern.baseLeadDays + selectedCrafts.reduce((sum, c) => sum + c.extraLeadDays, 0);
 
   const handleSelectFabric = (fab: (typeof FABRICS)[number]) => {
-    const offered = fab.id === config.fabricId ? undefined : approvedConfigs.find((option) => option.fabricId === fab.id);
+    const target = fabricSelections.get(fab.id);
+    if (!target) return;
+    const pairedChanged = target.patternId !== config.patternId;
     const accepted = onUpdateConfig(
-      (prev) => ({ ...prev, ...offered, fabricId: fab.id, activeView: prev.activeView, focusedHotspotId: null }),
+      (prev) => ({ ...target, activeView: prev.activeView, focusedHotspotId: null }),
       `选配面料：${fab.shortName}`
     );
-    flashFeedback(accepted, offered ? `已应用配套版型和工艺 · ${fab.shortName}` : `已切换面料 · ${fab.shortName}（${fab.gsm}g/m²）`);
+    flashFeedback(
+      accepted,
+      pairedChanged ? `已切换面料并匹配兼容版型 · ${fab.shortName}` : `已切换面料 · ${fab.shortName}（${fab.gsm}g/m²）`
+    );
   };
 
   const handleSelectPattern = (pat: (typeof PATTERNS)[number]) => {
-    const offered = pat.id === config.patternId ? undefined : approvedConfigs.find((option) => option.patternId === pat.id);
-    const accepted = onUpdateConfig((prev) => {
-      const nextSceneId = offered?.sceneId ?? (pat.suitableScenes.includes(prev.sceneId)
-        ? prev.sceneId
-        : pat.suitableScenes[0] ?? prev.sceneId);
-      return { ...prev, ...offered, patternId: pat.id, sceneId: nextSceneId, activeView: prev.activeView, focusedHotspotId: null };
-    }, `选配版型：${pat.name}`);
-    flashFeedback(accepted, offered ? `已应用配套面料和工艺 · ${pat.category}` : `已切换版型 · ${pat.category}`);
+    const target = patternSelections.get(pat.id);
+    if (!target) return;
+    const pairedChanged = target.fabricId !== config.fabricId;
+    const accepted = onUpdateConfig(
+      (prev) => ({ ...target, activeView: prev.activeView, focusedHotspotId: null }),
+      `选配版型：${pat.name}`
+    );
+    flashFeedback(
+      accepted,
+      pairedChanged ? `已切换版型并匹配兼容面料 · ${pat.category}` : `已切换版型 · ${pat.category}`
+    );
   };
 
   const handleToggleCraft = (craft: (typeof CRAFTS)[number]) => {
     const exists = config.craftIds.includes(craft.id);
+    if (exists && lockedCraftIds.has(craft.id)) {
+      flashFeedback(true, `当前需求必选工艺 · ${craft.shortName}`);
+      return;
+    }
     const accepted = onUpdateConfig((prev) => {
       const has = prev.craftIds.includes(craft.id);
       return {
@@ -187,7 +434,7 @@ export function ConfiguratorStudio({
               {input.projectName}
             </div>
             <div style={{ fontSize: 12.5, color: 'var(--ink-muted)', marginTop: 4 }}>
-              切换候选面料或版型时会一并应用配套组合
+              仅展示符合当前需求的面料、版型与工艺
             </div>
           </div>
 
@@ -237,14 +484,14 @@ export function ConfiguratorStudio({
               })}
             </div>
 
-            {allFabrics.length > quickFabricIds.size && (
+            {hasExtraFabrics && (
               <button
                 type="button"
                 className="btn-text"
                 style={{ marginTop: 8, fontSize: 12.5 }}
                 onClick={() => setShowAllFabrics((v) => !v)}
               >
-                <span>{showAllFabrics ? '仅看候选面料' : `试选更多面料 (${allFabrics.length - quickFabricIds.size})`}</span>
+                <span>{showAllFabrics ? '收起可选面料' : `展开更多可选面料 (${eligibleFabrics.length - quickFabrics.length})`}</span>
                 <ChevronDown
                   size={13}
                   style={{ transform: showAllFabrics ? 'rotate(180deg)' : 'none', transition: 'transform 160ms' }}
@@ -321,14 +568,14 @@ export function ConfiguratorStudio({
               })}
             </div>
 
-            {allPatterns.length > quickPatternIds.size && (
+            {hasExtraPatterns && (
               <button
                 type="button"
                 className="btn-text"
                 style={{ marginTop: 8, fontSize: 12.5 }}
                 onClick={() => setShowAllPatterns((v) => !v)}
               >
-                <span>{showAllPatterns ? '仅看候选版型' : `试选更多版型 (${allPatterns.length - quickPatternIds.size})`}</span>
+                <span>{showAllPatterns ? '收起可选版型' : `展开更多可选版型 (${eligiblePatterns.length - quickPatterns.length})`}</span>
                 <ChevronDown
                   size={13}
                   style={{ transform: showAllPatterns ? 'rotate(180deg)' : 'none', transition: 'transform 160ms' }}
@@ -361,14 +608,14 @@ export function ConfiguratorStudio({
               })}
             </div>
 
-            {allCrafts.length > selectedCrafts.length && (
+            {hasExtraCrafts && (
               <button
                 type="button"
                 className="btn-text"
                 style={{ marginTop: 8, fontSize: 12.5 }}
                 onClick={() => setShowAllCrafts((v) => !v)}
               >
-                <span>{showAllCrafts ? '仅看已选工艺' : `试选更多工艺 (${allCrafts.length - selectedCrafts.length})`}</span>
+                <span>{showAllCrafts ? '仅看已选工艺' : `展开更多可选工艺 (${eligibleCrafts.length - selectedCrafts.length})`}</span>
                 <ChevronDown
                   size={13}
                   style={{ transform: showAllCrafts ? 'rotate(180deg)' : 'none', transition: 'transform 160ms' }}

@@ -135,7 +135,7 @@ export function ProposalAndPrompts({
             <img
               src={heroPreviewImage}
               alt="方案场景意向"
-              style={{ width: '100%', height: 236, objectFit: 'cover', borderRadius: 10 }}
+              style={{ width: '100%', height: 236, objectFit: 'cover', objectPosition: 'center 18%', borderRadius: 10 }}
             />
             <img
               src={craftPreviewImage}

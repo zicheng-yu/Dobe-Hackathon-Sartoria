@@ -12,7 +12,7 @@ export const PRESET_DEMO_CASES: PresetDemoCase[] = [
     colorSpecifiedByUser: false,
     input: {
       projectName: '交领开襟真丝暗纹新中式外套',
-      clientName: '正式场合私定客户（身形偏高、肩背宽厚）',
+      clientName: '陈先生',
       businessType: 'private_couture',
       season: 'autumn',
       groupSize: '1 套（个人定制 · 静态模拟）',
@@ -126,7 +126,7 @@ export const PRESET_DEMO_CASES: PresetDemoCase[] = [
     colorSpecifiedByUser: true,
     input: {
       projectName: '户外舞台演出服两件套',
-      clientName: '舞台演奏艺术家（户外演出、抬手坐奏）',
+      clientName: '苏女士 · 演奏家',
       businessType: 'private_couture',
       season: 'spring',
       groupSize: '1 套（两件式演出定制 · 静态模拟）',
@@ -237,7 +237,7 @@ export const PRESET_DEMO_CASES: PresetDemoCase[] = [
     colorSpecifiedByUser: false,
     input: {
       projectName: '端庄中式低立领 H 型外套',
-      clientName: '正式场合定制客户（短颈、微有肚腩）',
+      clientName: '周先生',
       businessType: 'private_couture',
       season: 'autumn',
       groupSize: '1 套（个人定制 · 静态模拟）',
@@ -327,7 +327,7 @@ export const PRESET_DEMO_CASES: PresetDemoCase[] = [
     colorSpecifiedByUser: false,
     input: {
       projectName: '梅花暗纹青果领宋锦外套',
-      clientName: '正式社交定制客户（需叠穿内搭、显脖细）',
+      clientName: '沈女士',
       businessType: 'private_couture',
       season: 'autumn',
       groupSize: '1 套（个人定制 · 静态模拟）',
@@ -402,7 +402,7 @@ export const PRESET_DEMO_CASES: PresetDemoCase[] = [
     colorSpecifiedByUser: false,
     input: {
       projectName: '香云纱内敛简约中式外套',
-      clientName: '私享定制客户（短颈、轻微溜肩、小肚腩）',
+      clientName: '许先生',
       businessType: 'private_couture',
       season: 'autumn',
       groupSize: '1 套（个人定制 · 静态模拟）',
@@ -472,7 +472,7 @@ export const PRESET_DEMO_CASES: PresetDemoCase[] = [
     colorSpecifiedByUser: true,
     input: {
       projectName: '金融海派 60 人团体职业套装',
-      clientName: '浦江国际资管集团（60 人高管及涉外礼宾团队）',
+      clientName: '浦江国际资管',
       businessType: 'corporate_uniform',
       season: 'all_season',
       groupSize: '60 套（男 32 / 女 28 · 静态模拟）',
@@ -503,7 +503,7 @@ export const PRESET_DEMO_CASES: PresetDemoCase[] = [
     colorSpecifiedByUser: true,
     input: {
       projectName: '外滩晚宴墨黛金丝长礼服',
-      clientName: '林女士（外滩艺术基金联合创始人）',
+      clientName: '林女士 · 外滩艺术基金',
       businessType: 'private_couture',
       season: 'autumn',
       groupSize: '1 套（个人高级私定 · 静态模拟）',

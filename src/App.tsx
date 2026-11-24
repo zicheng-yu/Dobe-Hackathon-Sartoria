@@ -743,6 +743,7 @@ export default function App() {
         {activeSection === 'demo' && activeTab === 'configurator' && selectedCandidate && draftVersion?.promptPack && (
           <ConfiguratorStudio
             input={effectiveInput}
+            requirement={requirement}
             deconstructed={deconstructed}
             config={config}
             decisionMatch={decisionMatch}

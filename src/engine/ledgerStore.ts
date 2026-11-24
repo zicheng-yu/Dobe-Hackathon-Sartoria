@@ -149,6 +149,74 @@ export function createSeedLedgerRecords(): LedgerRecord[] {
   });
 }
 
+const LEGACY_SEED_CLIENT_NAMES: Record<string, string> = {
+  '正式场合私定客户（身形偏高、肩背宽厚）': '陈先生',
+  '舞台演奏艺术家（户外演出、抬手坐奏）': '苏女士 · 演奏家',
+  '正式场合定制客户（短颈、微有肚腩）': '周先生',
+  '正式社交定制客户（需叠穿内搭、显脖细）': '沈女士',
+  '私享定制客户（短颈、轻微溜肩、小肚腩）': '许先生',
+  '浦江国际资管集团（60 人高管及涉外礼宾团队）': '浦江国际资管',
+  '林女士（外滩艺术基金联合创始人）': '林女士 · 外滩艺术基金',
+};
+
+function mapLegacyClientName(name: string): string {
+  return LEGACY_SEED_CLIENT_NAMES[name] ?? name;
+}
+
+function normalizeLegacySeedClientName(record: LedgerRecord): LedgerRecord {
+  const nextClientName = mapLegacyClientName(record.clientName);
+  const nextInputClientName = mapLegacyClientName(record.requirementInput.clientName);
+  const nextProposalClientName = record.proposal ? mapLegacyClientName(record.proposal.clientName) : null;
+  const hasLegacyVersion = record.decisionHistory?.versions.some(
+    (v) =>
+      v.requirement.input.clientName in LEGACY_SEED_CLIENT_NAMES ||
+      (v.proposal ? v.proposal.clientName in LEGACY_SEED_CLIENT_NAMES : false)
+  );
+  if (
+    nextClientName === record.clientName &&
+    nextInputClientName === record.requirementInput.clientName &&
+    (!record.proposal || nextProposalClientName === record.proposal.clientName) &&
+    !hasLegacyVersion
+  ) {
+    return record;
+  }
+  return {
+    ...record,
+    clientName: nextClientName,
+    requirementInput: {
+      ...record.requirementInput,
+      clientName: nextInputClientName,
+    },
+    proposal: record.proposal
+      ? {
+          ...record.proposal,
+          clientName: nextProposalClientName ?? record.proposal.clientName,
+        }
+      : null,
+    decisionHistory: record.decisionHistory
+      ? {
+          ...record.decisionHistory,
+          versions: record.decisionHistory.versions.map((v) => ({
+            ...v,
+            requirement: {
+              ...v.requirement,
+              input: {
+                ...v.requirement.input,
+                clientName: mapLegacyClientName(v.requirement.input.clientName),
+              },
+            },
+            proposal: v.proposal
+              ? {
+                  ...v.proposal,
+                  clientName: mapLegacyClientName(v.proposal.clientName),
+                }
+              : null,
+          })),
+        }
+      : undefined,
+  };
+}
+
 export function loadLedgerRecords(): LedgerRecord[] {
   if (typeof window === 'undefined') {
     return createSeedLedgerRecords();
@@ -161,7 +229,9 @@ export function loadLedgerRecords(): LedgerRecord[] {
       return seeds;
     }
     const parsed = JSON.parse(raw) as LedgerRecord[];
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : createSeedLedgerRecords();
+    return Array.isArray(parsed) && parsed.length > 0
+      ? parsed.map(normalizeLegacySeedClientName)
+      : createSeedLedgerRecords();
   } catch {
     return createSeedLedgerRecords();
   }
