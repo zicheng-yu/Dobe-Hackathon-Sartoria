@@ -13,6 +13,8 @@ const groups = [
   { level: 'pending', label: '待确认', tone: 'dot-caution' },
 ] as const;
 
+const GENERIC_UNKNOWN_REASON = '原话未说明或暂无可归一化的取值。';
+
 interface ConstraintEditorProps {
   item: Constraint;
   onSave: (item: Constraint) => void;
@@ -106,53 +108,133 @@ export function RequirementConstraints({ requirement, onEdit }: RequirementConst
     setEditingId(null);
   }
 
+  const questionFields = new Set(questions.map((q) => q.field));
+  const hardItems = constraints.filter((item) => item.level === 'hard');
+  const prefItems = constraints.filter((item) => item.level === 'preference');
+  const pendingItems = constraints.filter((item) => item.level === 'pending');
+
+  const priorityPending = pendingItems.filter(
+    (item) => item.blocking || item.sourceTurnId !== null || item.field === 'color' || questionFields.has(item.field)
+  );
+  const optionalPending = pendingItems.filter((item) => !priorityPending.includes(item));
+
+  function renderConstraintCard(item: Constraint, compactPending = false) {
+    const fieldLabel = requirementFields[item.field].label;
+    const quoteTurn = item.quote && turns.find((turn) => turn.id === item.sourceTurnId);
+    const displayReason = item.reason && item.reason !== GENERIC_UNKNOWN_REASON ? item.reason : null;
+    return (
+      <article key={item.id} className={compactPending ? 'constraint-chip-card' : 'constraint-item'}>
+        <div className="constraint-item-head">
+          <div className="constraint-inline-main">
+            <span className="constraint-field">{fieldLabel}</span>
+            <span className="constraint-value">
+              {item.op === 'neq' ? '排除 · ' : ''}{describeRequirementValue(item.field, item.value)}
+            </span>
+          </div>
+          {onEdit && editingId !== item.id && (
+            <button type="button" className="btn-outline" aria-label={`编辑${fieldLabel}`} onClick={() => setEditingId(item.id)}>
+              {item.level === 'pending' ? '补充' : '编辑'}
+            </button>
+          )}
+        </div>
+        <p className="constraint-note">
+          {sourceLabels[item.state]}{displayReason ? ` · ${displayReason}` : ''}
+        </p>
+        {quoteTurn && (
+          <details className="constraint-quote">
+            <summary>查看原话</summary>
+            <blockquote>「{item.quote}」</blockquote>
+            {quoteTurn.text.trim() !== item.quote && <p>原始记录：{quoteTurn.text}</p>}
+          </details>
+        )}
+        {editingId === item.id && onEdit && (
+          <ConstraintEditor key={item.id} item={item} onSave={save} onCancel={() => setEditingId(null)} />
+        )}
+      </article>
+    );
+  }
+
   return (
     <section className="surface-card constraint-panel" aria-labelledby="requirement-constraints-heading">
       <header className="constraint-header">
-        <h2 id="requirement-constraints-heading">需求约束</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <h2 id="requirement-constraints-heading">需求约束</h2>
+          <span className="constraint-summary-count">
+            已明确 {hardItems.length} · 建议 {prefItems.length}{priorityPending.length > 0 ? ` · 待确认 ${priorityPending.length}` : ''}
+          </span>
+        </div>
         <span className="meta-badge">{requirement.mode === 'local_rules' ? '本地规则 · 人工确认' : '结构化来源已校验'}</span>
       </header>
+
       {questions.length > 0 && (
         <div className="constraint-questions">
           <h3>优先追问</h3>
           <ul>{questions.map(({ field, question }) => <li key={field}>{question}</li>)}</ul>
         </div>
       )}
-      <div className="constraint-groups">
-        {groups.map(({ level, label, tone }) => {
-          const items = constraints.filter((item) => item.level === level);
-          return (
-            <section key={level} className="constraint-group" aria-label={label}>
-              <h3><span className={`status-dot ${tone}`} />{label}</h3>
-              {items.length === 0 && <p className="constraint-note">暂无</p>}
-              {items.map((item) => {
-                const fieldLabel = requirementFields[item.field].label;
-                const quoteTurn = item.quote && turns.find((turn) => turn.id === item.sourceTurnId);
-                return (
-                  <article key={item.id} className="constraint-item">
-                    <div className="constraint-item-head">
-                      <span>{fieldLabel}</span>
-                      {onEdit && editingId !== item.id && (
-                        <button type="button" className="btn-outline" aria-label={`编辑${fieldLabel}`} onClick={() => setEditingId(item.id)}>编辑</button>
-                      )}
-                    </div>
-                    <p className="constraint-value">{item.op === 'neq' ? '排除 · ' : ''}{describeRequirementValue(item.field, item.value)}</p>
-                    <p className="constraint-note">{sourceLabels[item.state]}{item.reason && ` · ${item.reason}`}</p>
-                    {quoteTurn && (
-                      <details className="constraint-quote">
-                        <summary>查看原话</summary>
-                        <blockquote>「{item.quote}」</blockquote>
-                        {quoteTurn.text.trim() !== item.quote && <p>原始记录：{quoteTurn.text}</p>}
-                      </details>
-                    )}
-                    {editingId === item.id && onEdit && <ConstraintEditor key={item.id} item={item} onSave={save} onCancel={() => setEditingId(null)} />}
-                  </article>
-                );
-              })}
-            </section>
-          );
-        })}
+
+      <div className="constraint-main-grid">
+        <section className="constraint-group" aria-label="必须满足">
+          <h3>
+            <span className="status-dot dot-pass" />
+            <span>必须满足</span>
+            <span className="constraint-group-count">{hardItems.length}</span>
+          </h3>
+          {hardItems.length === 0 ? (
+            <p className="constraint-note">暂无硬性要求</p>
+          ) : (
+            <div className="constraint-item-grid">
+              {hardItems.map((item) => renderConstraintCard(item))}
+            </div>
+          )}
+        </section>
+
+        <section className="constraint-group" aria-label="偏好与建议">
+          <h3>
+            <span className="status-dot dot-info" />
+            <span>偏好与建议</span>
+            <span className="constraint-group-count">{prefItems.length}</span>
+          </h3>
+          {prefItems.length === 0 ? (
+            <p className="constraint-note">暂无补充建议</p>
+          ) : (
+            <div className="constraint-item-grid">
+              {prefItems.map((item) => renderConstraintCard(item))}
+            </div>
+          )}
+        </section>
       </div>
+
+      {pendingItems.length > 0 && (
+        <section className="constraint-pending-bar" aria-label="待确认">
+          {priorityPending.length > 0 && (
+            <>
+              <h3>
+                <span className="status-dot dot-caution" />
+                <span>需优先确认</span>
+              </h3>
+              <div className="constraint-pending-grid">
+                {priorityPending.map((item) => renderConstraintCard(item, true))}
+              </div>
+            </>
+          )}
+
+          {optionalPending.length > 0 && (
+            <details className="constraint-more-pending">
+              <summary>
+                <span>其他未提及字段（{optionalPending.length} 项，按需补充）</span>
+                <span className="constraint-more-preview">
+                  {optionalPending.slice(0, 5).map((item) => requirementFields[item.field].label).join(' · ')}
+                  {optionalPending.length > 5 ? ' …' : ''}
+                </span>
+              </summary>
+              <div className="constraint-pending-grid" style={{ marginTop: 10 }}>
+                {optionalPending.map((item) => renderConstraintCard(item, true))}
+              </div>
+            </details>
+          )}
+        </section>
+      )}
     </section>
   );
 }

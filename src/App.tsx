@@ -252,6 +252,11 @@ export default function App() {
       if (section === 'demo') {
         if (resolvedTab !== 'knowledge') setLastFlowTab(resolvedTab);
         if (prepareInterview) syncIfNeededBeforeLeavingStep1(resolvedTab);
+        if (resolvedTab === 'proposal') {
+          setCompletedSteps((prev) => ({ ...prev, requirements: true, configurator: true }));
+        } else if (resolvedTab === 'ledger') {
+          setCompletedSteps((prev) => ({ ...prev, requirements: true, configurator: true, proposal: true }));
+        }
       }
       const next = { section, demoTab: resolvedTab };
       if (typeof window !== 'undefined') {
@@ -422,7 +427,7 @@ export default function App() {
     appendSessionLog(
       '需求解构',
       outcome.data.engineUsed === 'llm_api'
-        ? `${outcome.data.modelUsed ?? 'gpt-6.2-astra'} 在线拆解并完成目录约束整理`
+        ? '在线智能引擎拆解并完成目录约束整理'
         : '完成需求访谈与目录约束整理',
       `记录 ${next.constraints.filter((constraint) => constraint.level === 'hard').length} 条硬条件，附八项定制信息与六维审美摘要。`
     );

@@ -145,7 +145,7 @@ export function RequirementStudio({
           />
           <span>
             {engineMode === 'online_worker' && workerStatus?.configured && quota
-              ? `GPT-6.2 · 今日剩 ${quota.visitor.remaining}/${quota.visitor.limit}`
+              ? `智能引擎 · 今日剩 ${quota.visitor.remaining}/${quota.visitor.limit}`
               : '本地规则'}
           </span>
         </button>
@@ -479,8 +479,8 @@ export function RequirementStudio({
                 <div className="analysis-placeholder-icon">
                   <Loader2 size={18} className="spin-icon" />
                 </div>
-                <div style={{ fontSize: 16, fontWeight: 600 }}>
-                  {engineMode === 'online_worker' ? 'GPT-6.2 Astra 解析中…' : '正在拆解需求…'}
+                <div style={{ fontSize: 15, fontWeight: 590 }}>
+                  {engineMode === 'online_worker' ? '智能引擎解析中…' : '正在拆解需求…'}
                 </div>
                 <div className="analysis-steps-list">
                   {ANALYSIS_STAGES.map((label, idx) => {
@@ -556,9 +556,7 @@ export function RequirementStudio({
                     <span className="status-dot dot-pass" />
                     <h2 style={{ fontSize: 15, fontWeight: 600 }}>拆解结果</h2>
                     <span className="meta-badge">
-                      {deconstructed.engineUsed === 'llm_api'
-                        ? deconstructed.modelUsed ?? 'gpt-6.2-astra'
-                        : '本地规则引擎'}
+                      {deconstructed.engineUsed === 'llm_api' ? '在线智能引擎' : '本地规则引擎'}
                     </span>
                   </div>
 
@@ -593,7 +591,7 @@ export function RequirementStudio({
                       const hasHardOrUnknown = constraints.some(
                         (c) => c.level === 'hard' || c.state === 'confirmed' || c.state === 'unknown' || c.blocking
                       );
-                      const preserveReferenceCopy = decisionRequirement?.input.presetDemoId === 'official-case-6' && constraint?.state === 'suggested';
+                      const preserveReferenceCopy = Boolean(decisionRequirement?.input.presetDemoId) && constraint?.state === 'suggested';
                       const preserveOnlineCopy = isOnlineLlm && !hasHardOrUnknown && (item.key !== 'color' || deconstructed.colorSpecifiedByUser);
                       const value = decisionRequirement && !preserveReferenceCopy && !preserveOnlineCopy ? specText(constraints) || '待确认' : item.value;
                       return (

@@ -34,9 +34,9 @@ interface ProposalAndPromptsProps {
 }
 
 const FORMAT_LABELS: Record<PromptToolFormat, string> = {
-  jimeng_cn: '即梦中文',
+  jimeng_cn: '中文描述',
   midjourney: 'Midjourney',
-  flux_sd: 'Flux / SD',
+  flux_sd: 'Flux',
 };
 
 const PROVENANCE_LABEL: Record<SpecProvenance, { label: string; dotClass: string }> = {
@@ -311,24 +311,27 @@ export function ProposalAndPrompts({
           </details>
         </article>
 
-        {/* Right: Clean 3-Shot Prompt Pack */}
-        <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div className="surface-card" style={{ padding: '18px 20px' }}>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: 10,
-                flexWrap: 'wrap',
-              }}
-            >
-              <div className="segmented segmented-solid no-print">
+        {/* Right: Integrated 3-Shot Visual Direction */}
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 10,
+              flexWrap: 'wrap',
+              padding: '2px 2px 0',
+            }}
+          >
+            <h2 style={{ fontSize: 15, fontWeight: 590 }}>三镜头视觉意向</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} className="no-print">
+              <div className="segmented segmented-solid">
                 {(Object.keys(FORMAT_LABELS) as PromptToolFormat[]).map((fmt) => (
                   <button
                     key={fmt}
                     type="button"
                     className={`seg-btn ${toolFormat === fmt ? 'active' : ''}`}
+                    style={{ padding: '4px 10px', fontSize: 12 }}
                     onClick={() => setToolFormat(fmt)}
                   >
                     {FORMAT_LABELS[fmt]}
@@ -338,35 +341,20 @@ export function ProposalAndPrompts({
 
               <button
                 type="button"
-                className="btn-outline no-print"
-                style={{ padding: '6px 12px', fontSize: 12.5 }}
+                className="btn-outline"
+                style={{ padding: '5px 11px', fontSize: 12 }}
                 onClick={() =>
                   downloadTextFile(
-                    `${proposal.projectName}-绘图提示词.md`,
+                    `${proposal.projectName}-视觉意向提示词.md`,
                     buildPromptPackMarkdown(promptPack),
                     'text/markdown;charset=utf-8'
                   )
                 }
               >
                 <Download size={13} />
-                <span>导出提示词</span>
+                <span>导出</span>
               </button>
             </div>
-
-            <details className="disclosure" style={{ marginTop: 12, paddingTop: 10 }}>
-              <summary>
-                <span>绘图约束与色彩说明</span>
-                <ChevronDown size={14} />
-              </summary>
-              <div style={{ marginTop: 10, fontSize: 12.5, color: 'var(--ink-secondary)', lineHeight: 1.65 }}>
-                <div style={{ color: 'var(--ink-primary)', marginBottom: 6 }}>{promptPack.colorDisclaimer}</div>
-                <ul style={{ margin: '0 0 0 16px', padding: 0 }}>
-                  {promptPack.mustPreserveConstraints.map((c) => (
-                    <li key={c}>{c}</li>
-                  ))}
-                </ul>
-              </div>
-            </details>
           </div>
 
           {promptPack.shots.map((shot) => {

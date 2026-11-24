@@ -509,7 +509,7 @@ export const PRESET_DEMO_CASES: PresetDemoCase[] = [
       groupSize: '1 套（个人高级私定 · 静态模拟）',
       targetSceneId: 'scene-bund-banquet',
       rawNarrative:
-        '秋夜出席外滩老洋房慈善晚宴并转场静安艺术沙龙，想要一件有老上海海派电影氛围、克制高级不老气的深色长礼服，偏好墨黑带低调古金暗纹的宋锦真丝质感，修长显瘦，领口斜襟融入海派手工盘扣与含蓄白玉兰刺绣。',
+        '秋夜出席外滩老洋房慈善晚宴，想要一件有老上海海派电影氛围、克制高级不老气的深色长礼服，偏好墨黑带低调古金暗纹的宋锦质感，修长显瘦，领口斜襟融入海派手工盘扣与含蓄白玉兰刺绣。',
       presetDemoId: 'demo-haipai-evening-gown',
     },
     recommendedConfig: {

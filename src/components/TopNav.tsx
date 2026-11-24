@@ -46,10 +46,11 @@ export function TopNav({
   const isOnlineActive = engineMode === 'online_worker' && Boolean(workerStatus?.configured);
   const remainingText =
     isOnlineActive && workerStatus?.quota
-      ? `GPT-6.2 · ${workerStatus.quota.visitor.remaining}/${workerStatus.quota.visitor.limit}`
+      ? `智能引擎 · ${workerStatus.quota.visitor.remaining}/${workerStatus.quota.visitor.limit}`
       : engineMode === 'online_worker'
-        ? 'GPT-6.2'
+        ? '智能引擎'
         : '本地规则';
+  const activeStepIndex = PIPELINE_STEPS.findIndex((s) => s.id === activeTab);
 
   return (
     <div className="nav-shell no-print">
@@ -96,14 +97,18 @@ export function TopNav({
             <div className="stepper-track">
               {PIPELINE_STEPS.map((step, index) => {
                 const isActive = activeTab === step.id;
-                const isDone = completedSteps[step.id];
-                const prevDone = index > 0 && completedSteps[PIPELINE_STEPS[index - 1].id];
+                const isDone = completedSteps[step.id] || (activeStepIndex > -1 && index < activeStepIndex);
+                const prevDone =
+                  index > 0 &&
+                  (completedSteps[PIPELINE_STEPS[index - 1].id] ||
+                    (activeStepIndex > -1 && index - 1 < activeStepIndex));
+                const connectorFilled = (activeStepIndex >= index && activeStepIndex > -1) || (prevDone && isDone);
 
                 return (
                   <div key={step.id} style={{ display: 'inline-flex', alignItems: 'center' }}>
                     {index > 0 && (
                       <span
-                        className={`stepper-connector ${prevDone || isActive ? 'filled' : ''}`}
+                        className={`stepper-connector ${connectorFilled ? 'filled' : ''}`}
                         aria-hidden="true"
                       />
                     )}

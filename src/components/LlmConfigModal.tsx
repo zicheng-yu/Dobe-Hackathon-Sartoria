@@ -27,7 +27,7 @@ export function LlmConfigModal({
 
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="llm-title">
-      <div className="modal-panel" style={{ maxWidth: 540 }}>
+      <div className="modal-panel" style={{ maxWidth: 520 }}>
         <div
           style={{
             display: 'flex',
@@ -36,8 +36,8 @@ export function LlmConfigModal({
             marginBottom: 18,
           }}
         >
-          <h2 id="llm-title" style={{ fontSize: 18, fontWeight: 600 }}>
-            模型引擎与配额状态
+          <h2 id="llm-title" style={{ fontSize: 16, fontWeight: 590 }}>
+            解析引擎设置
           </h2>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <button
@@ -45,7 +45,7 @@ export function LlmConfigModal({
               className="util-btn"
               onClick={onRefreshStatus}
               disabled={isRefreshing}
-              aria-label="刷新配额状态"
+              aria-label="刷新服务状态"
             >
               <RefreshCw size={14} className={isRefreshing ? 'spin-icon' : ''} />
               <span>刷新</span>
@@ -56,7 +56,6 @@ export function LlmConfigModal({
           </div>
         </div>
 
-        {/* Mode Selector */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
           <button
             type="button"
@@ -65,10 +64,10 @@ export function LlmConfigModal({
           >
             <div>
               <div className="apple-option-title">
-                <span>GPT-6.2 Astra</span>
-                <span className="rec-tag">在线</span>
+                <span>在线智能引擎</span>
+                <span className="rec-tag">云端</span>
               </div>
-              <div className="apple-option-sub">Worker 服务端代理 · 严格 Schema</div>
+              <div className="apple-option-sub">云端语义解析 · 结构化输出</div>
             </div>
           </button>
 
@@ -87,28 +86,26 @@ export function LlmConfigModal({
           </button>
         </div>
 
-        {/* Security Assurance */}
         <div className="notice-row" style={{ marginBottom: 16 }}>
           <ShieldCheck size={15} color="var(--ink-primary)" style={{ flexShrink: 0, marginTop: 2 }} />
           <span>
             {workerStatus === null
-              ? '当前未检测到 Worker 代理（离线预览模式），自动使用本地规则引擎。'
+              ? '当前处于本地预览模式，默认使用本地规则引擎。'
               : workerStatus.configured
-                ? `OpenAI Key 已托管于 Cloudflare Worker Secrets，浏览器零接触密钥（${workerStatus.model} · reasoning: ${workerStatus.reasoningEffort}）。`
-                : '服务端尚未配置在线模型密钥，可继续使用本地规则引擎。'}
+                ? '在线语义服务已就绪，凭据由服务端安全托管，浏览器不接触任何密钥。'
+                : '在线服务暂未启用，可继续使用本地规则引擎。'}
           </span>
         </div>
 
-        {/* Auditable Server Quota & $40 Hard Budget */}
         {quota && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
               <div className="sub-card">
-                <div style={{ fontSize: 12, color: 'var(--ink-muted)' }}>单访客今日剩余</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-muted)' }}>今日剩余</div>
                 <div
                   style={{
                     fontSize: 20,
-                    fontWeight: 600,
+                    fontWeight: 590,
                     marginTop: 4,
                     fontVariantNumeric: 'tabular-nums',
                   }}
@@ -122,7 +119,7 @@ export function LlmConfigModal({
                 <div
                   style={{
                     fontSize: 20,
-                    fontWeight: 600,
+                    fontWeight: 590,
                     marginTop: 4,
                     fontVariantNumeric: 'tabular-nums',
                   }}
@@ -136,7 +133,7 @@ export function LlmConfigModal({
                 <div
                   style={{
                     fontSize: 18,
-                    fontWeight: 600,
+                    fontWeight: 590,
                     marginTop: 4,
                     fontVariantNumeric: 'tabular-nums',
                   }}
@@ -146,10 +143,9 @@ export function LlmConfigModal({
               </div>
             </div>
 
-            <div className="sub-card" style={{ fontSize: 12.5, color: 'var(--ink-secondary)', lineHeight: 1.65 }}>
+            <div className="sub-card" style={{ fontSize: 12, color: 'var(--ink-secondary)', lineHeight: 1.65 }}>
               <div>日配额重置：{quota.resetAt}（Asia/Shanghai 每日 00:00）</div>
-              <div>累计上限：项目周期累计硬预算 ${quota.budget.limitUsd} USD（不随日期重置）</div>
-              <div>计费口径：{quota.pricingVersion} · 历史日志 {quota.totalLoggedCalls} 条</div>
+              <div>累计记录：{quota.totalLoggedCalls} 次云端解析调用</div>
             </div>
 
             {!onlineAvailable && engineMode === 'online_worker' && (
@@ -157,8 +153,8 @@ export function LlmConfigModal({
                 <span className="status-dot dot-caution" />
                 <span>
                   {quota.budget.exhausted
-                    ? '项目累计预算已达上限，在线模型已硬停止，建议切换为本地规则引擎。'
-                    : '当前在线服务未就绪，建议切换为本地规则引擎。'}
+                    ? '项目预算已达上限，请切换为本地规则引擎继续使用。'
+                    : '在线服务暂未就绪，建议切换为本地规则引擎。'}
                 </span>
               </div>
             )}

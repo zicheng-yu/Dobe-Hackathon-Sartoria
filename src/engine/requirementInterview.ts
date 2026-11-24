@@ -472,9 +472,38 @@ const sceneContext: Partial<Record<string, string>> = {
   'scene-bund-banquet': 'formal_evening',
 };
 
-const officialSixSuggestions: Partial<Record<ConstraintField, NonNullable<Constraint['value']>>> = {
-  patternStructure: 'h_line', collar: 'cross_open', fabric: 'silk', motif: 'subtle_jacquard',
-  lengthRatio: 'mid_hip', closure: 'no_visible_buttons',
+const presetSuggestions: Readonly<Record<string, Partial<Record<ConstraintField, NonNullable<Constraint['value']>>>>> = {
+  'official-case-6': {
+    patternStructure: 'h_line', collar: 'cross_open', fabric: 'silk', motif: 'subtle_jacquard',
+    lengthRatio: 'mid_hip', closure: 'no_visible_buttons', care: 'dry_clean', luster: 'medium',
+    craft: 'crf-cross-collar-no-button',
+  },
+  'official-case-3': {
+    collar: 'diagonal', fabric: 'silk', color: 'ivory_rose', motif: 'subtle_jacquard',
+    lengthRatio: 'ankle', luster: 'high', style: 'new_chinese', craft: 'crf-contrast-piping-cuff',
+  },
+  'official-case-1': {
+    patternStructure: 'h_line', collar: 'stand', fabric: 'acetate', motif: 'subtle_jacquard',
+    lengthRatio: 'mid_hip', closure: 'no_visible_buttons', care: 'dry_clean', luster: 'medium',
+    style: 'new_chinese', craft: 'crf-low-collar-ergo',
+  },
+  'official-case-2': {
+    patternStructure: 'h_line', collar: 'lapel', fabric: 'blend', lengthRatio: 'mid_hip',
+    care: 'dry_clean', luster: 'medium', style: 'new_chinese', craft: 'crf-plum-starlight-motif',
+  },
+  'official-case-4': {
+    patternStructure: 'h_line', collar: 'stand', fabric: 'silk', motif: 'plain',
+    lengthRatio: 'mid_hip', closure: 'no_visible_buttons', luster: 'low',
+    style: 'new_chinese', craft: 'crf-low-collar-ergo',
+  },
+  'demo-corporate-haipai-uniform': {
+    category: 'suit', patternStructure: 'two_piece', fabric: 'wool', motif: 'plain',
+    easeAllowance: 'arm_mobility', closure: 'no_visible_buttons', care: 'dry_clean',
+    luster: 'medium', craft: 'crf-full-canvas-guiba',
+  },
+  'demo-haipai-evening-gown': {
+    fabric: 'blend', lengthRatio: 'floor', care: 'dry_clean', luster: 'high', style: 'new_chinese',
+  },
 };
 
 const questions: Partial<Record<ConstraintField, string>> = {
@@ -500,10 +529,11 @@ export function buildClarificationQuestions(constraints: Constraint[]): Clarific
 function formAndPresetSuggestions(input: RequirementInput): Partial<Record<ConstraintField, NonNullable<Constraint['value']>>> {
   const groupSize = input.groupSize.matchAll(QUANTITY).next().value?.[1];
   const formQuantity = groupSize ? parseQuantity(groupSize) : 0;
+  const preset = input.presetDemoId ? presetSuggestions[input.presetDemoId] : undefined;
   return {
     businessType: input.businessType, season: input.season, scene: sceneContext[input.targetSceneId],
     quantity: input.presetDemoId && formQuantity ? formQuantity : undefined,
-    ...(input.presetDemoId === 'official-case-6' ? officialSixSuggestions : {}),
+    ...(preset ?? {}),
   };
 }
 
@@ -511,16 +541,17 @@ export function buildLocalDecisionRequirement(input: RequirementInput): Decision
   const firstTurn = { id: 'brief-1', text: input.rawNarrative };
   const observations = extractRevisionConstraints(firstTurn);
   const suggestions = formAndPresetSuggestions(input);
+  const preset = input.presetDemoId ? presetSuggestions[input.presetDemoId] : undefined;
   const constraints = requirementFieldIds.flatMap((field): Constraint[] => {
     const stated = observations.filter((constraint) => constraint.field === field);
     if (stated.length) return stated;
     const value = suggestions[field] ?? null;
-    const fromPreset = input.presetDemoId === 'official-case-6' && field in officialSixSuggestions;
+    const fromPreset = Boolean(preset && field in preset);
     return [{
       id: `initial:${field}`, field, op: 'eq', value, level: value === null ? 'pending' : 'preference',
       state: value === null ? 'unknown' : 'suggested', sourceTurnId: null, quote: null, verifiedBy: null,
       reason: value === null ? '原话未说明或暂无可归一化的取值。' :
-        fromPreset ? '按官方案例六设计参考给出的建议。' : '沿用项目表单的场景信息。',
+        fromPreset ? '按案例参考建议预填，可随时调整。' : '沿用项目场景信息。',
     }];
   });
   return { schemaVersion: REQUIREMENT_SCHEMA_VERSION, mode: 'local_rules', input, turns: [firstTurn], constraints, questions: buildClarificationQuestions(constraints) };

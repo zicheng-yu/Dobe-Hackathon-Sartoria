@@ -317,6 +317,9 @@ export function VersionHandoff({ history }: { history: DecisionHistory }) {
   const previous = history.versions.find((entry) => entry.id === version.parentVersionId) ?? null;
   const handoff = buildDecisionExport(version, previous);
   const fileStem = `Sartoria-V${version.number}-${version.id.replace(/[^\w.-]/g, '-')}`;
+  const genericUnknownText = '原话未说明或暂无可归一化的取值。';
+  const primaryReviews = handoff.reviews.filter((item) => item.nextStep !== genericUnknownText);
+  const optionalReviews = handoff.reviews.filter((item) => item.nextStep === genericUnknownText);
 
   return (
     <section className="surface-card decision-panel decision-handoff" aria-label="版本交接">
@@ -359,10 +362,20 @@ export function VersionHandoff({ history }: { history: DecisionHistory }) {
         <div>
           <h3>待核责任</h3>
           <ul className="decision-review-list">
-            {handoff.reviews.map(({ field, owner, nextStep }) => (
+            {primaryReviews.map(({ field, owner, nextStep }) => (
               <li key={field}><strong>{decisionFieldLabel(field)} · {owner}</strong><div>{nextStep}</div></li>
             ))}
           </ul>
+          {optionalReviews.length > 0 && (
+            <details className="decision-evidence" style={{ marginTop: 8 }}>
+              <summary>其余 {optionalReviews.length} 项未提及字段（按需补充）</summary>
+              <ul>
+                {optionalReviews.map(({ field, owner }) => (
+                  <li key={field}>{decisionFieldLabel(field)} · {owner}</li>
+                ))}
+              </ul>
+            </details>
+          )}
         </div>
         <div>
           <h3>选中版本依据</h3>
