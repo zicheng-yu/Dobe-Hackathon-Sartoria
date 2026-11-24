@@ -1,4 +1,4 @@
-# Sartoria AI — 海派高定与团体职业服 AI 企划辅助系统
+# Sartoria AI — 服装AI企划辅助系统
 
 > **系统定位**：面向高级定制企划人员、定制业务专员与团体职业服方案设计师的 AI 企划决策工作台  
 > **在线入口**：官网 [sartoria.zichengyu.com](https://sartoria.zichengyu.com) ｜ 在线工作台 [`/demo`](https://sartoria.zichengyu.com/demo) ｜ 演示视频 [`/video`](https://sartoria.zichengyu.com/video) ｜ 在线文档 [`/docs`](https://sartoria.zichengyu.com/docs) ｜ GitHub [Dobe-Hackathon-Sartoria](https://github.com/zicheng-yu/Dobe-Hackathon-Sartoria)

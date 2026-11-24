@@ -112,7 +112,7 @@ export function LandingHome({
         <div className="portal-hero-text">
           <h1 className="portal-h1">Sartoria</h1>
           <p className="portal-lead">
-            海派高定与团体职业服企划工作台。将自然语言需求转化为定制参数、场景搭配方案与可追溯项目档案。
+            服装企划工作台。将自然语言需求转化为定制参数、场景搭配方案与可追溯项目档案。
           </p>
 
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 28 }}>
