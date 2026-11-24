@@ -2,7 +2,7 @@ import { CRAFTS } from '../data/crafts';
 import { buildColorSpec, colorReviewText } from '../engine/colorPresentation';
 import { findConstraintChanges } from '../engine/decisionRevisions';
 import { describeRequirementValue } from '../engine/requirementInterview';
-import type { Constraint, ConstraintField, DecisionExport, HandoffReview, Version } from '../types/decisions';
+import type { Constraint, ConstraintChange, ConstraintField, DecisionExport, HandoffReview, Version } from '../types/decisions';
 import { buildPromptPackMarkdown } from './exporters';
 
 const FIELD_LABELS: Record<ConstraintField, string> = {
@@ -28,18 +28,19 @@ const FIELD_LABELS: Record<ConstraintField, string> = {
 
 const VALUE_LABELS: Readonly<Record<string, string>> = {
   private_couture: '个人定制', corporate_uniform: '团体职业服',
-  indoor_formal: '室内正式', outdoor_stage: '户外舞台', formal_evening: '正式晚宴',
+  indoor_formal: '室内正式', outdoor_stage: '户外舞台', indoor_performance: '室内演出', formal_evening: '正式晚宴',
   spring: '春季', summer: '夏季', autumn: '秋季', winter: '冬季', all_season: '四季通用',
   jacket: '外套', two_piece: '两件式', suit: '西服套装', dress: '连衣礼服', h_line: 'H 型直身',
-  cross_open: '交领开襟', stand: '立领', lapel: '驳领',
+  cross_open: '交领开襟', stand: '立领', lapel: '驳领', diagonal: '斜襟',
   silk: '真丝', blend: '混纺', wool: '羊毛', polyester: '涤纶', acetate: '醋酸', velvet: '丝绒',
   navy: '藏青', stone_gray: '暖灰', pine_green: '松墨绿', obsidian: '炭黑', crimson: '绯红',
   ivory: '月白', ivory_rose: '米白撞亮粉', earth_brown: '茶褐', neutral_silk: '中性丝调',
   champagne: '香槟色', mist_blue: '雾蓝',
-  subtle_jacquard: '细暗纹', plain: '素面', mid_hip: '臀中', ankle: '及踝', floor: '曳地',
-  arm_mobility: '抬臂舒展', no_visible_buttons: '无外露纽扣', visible_buttons: '有外露纽扣',
+  subtle_jacquard: '细暗纹', plain: '素面', mid_hip: '臀中', ankle: '及踝', floor: '曳地', tailored_suit: '西装比例',
+  arm_mobility: '抬臂舒展', standard: '常规放量', no_visible_buttons: '无外露纽扣', visible_buttons: '有外露纽扣',
   machine_wash: '可机洗', dry_clean: '专业干洗', hand_wash: '手洗',
-  high: '高光泽', medium: '中等光泽', low: '低光泽', traditional_uniform: '传统制服', modern: '现代风格',
+  high: '高光泽', medium: '中等光泽', low: '低光泽',
+  traditional_uniform: '传统制服', modern: '现代风格', new_chinese: '新中式',
 };
 
 export const REVISION_OPTION_LABELS = {
@@ -93,6 +94,61 @@ export function decisionValueLabel(constraint: Constraint | null): string {
     : typeof value === 'boolean' ? (value ? '要求抗皱' : '无需抗皱')
     : VALUE_LABELS[String(value)] ?? CRAFTS.find((craft) => craft.id === value)?.shortName ?? String(value);
   return constraint.op === 'neq' ? `排除 ${label}` : label;
+}
+
+export interface SummarizedConstraintChange {
+  field: ConstraintField;
+  before: string;
+  after: string;
+  quotes: string[];
+}
+
+export function summarizeConstraintChanges(changes: ConstraintChange[]): SummarizedConstraintChange[] {
+  const byField = new Map<ConstraintField, ConstraintChange[]>();
+  for (const change of changes) {
+    const bucket = byField.get(change.field);
+    if (bucket) bucket.push(change);
+    else byField.set(change.field, [change]);
+  }
+  return [...byField.entries()].map(([field, entries]) => {
+    const beforeConcrete = [...new Set(
+      entries.filter((item) => item.previous && item.previous.value !== null).map((item) => decisionValueLabel(item.previous)),
+    )];
+    const beforeFallback = [...new Set(entries.map((item) => decisionValueLabel(item.previous)))];
+    const before = (beforeConcrete.length ? beforeConcrete : beforeFallback).join('、');
+
+    const positiveAfter = [...new Set(
+      entries
+        .filter((item) => item.next && item.next.value !== null && item.next.op !== 'neq')
+        .map((item) => decisionValueLabel(item.next)),
+    )];
+    const excludedAfter = [...new Set(
+      entries
+        .filter((item) => item.next && item.next.value !== null && item.next.op === 'neq')
+        .map((item) => decisionValueLabel(item.next)),
+    )];
+    const pendingAfter = [...new Set(
+      entries
+        .filter((item) => !item.next || item.next.value === null)
+        .map((item) => decisionValueLabel(item.next)),
+    )];
+
+    let after: string;
+    if (positiveAfter.length > 0 && excludedAfter.length > 0) {
+      after = `${positiveAfter.join('、')}（${excludedAfter.join('、')}）`;
+    } else if (positiveAfter.length > 0) {
+      after = positiveAfter.join('、');
+    } else if (excludedAfter.length > 0) {
+      after = excludedAfter.join('、');
+    } else {
+      after = pendingAfter.join('、') || '待确认';
+    }
+
+    const quotes = [...new Set(
+      entries.map((item) => item.next?.quote?.trim()).filter((quote): quote is string => Boolean(quote)),
+    )];
+    return { field, before, after, quotes };
+  });
 }
 
 export function decisionSourceLabel(kind: keyof typeof SOURCE_LABELS): string {
@@ -234,8 +290,8 @@ export function buildDecisionMarkdown(version: Version, previous: Version | null
       `- 反馈原话：「${revision.turn.text}」`,
       ...revision.impacts.map(({ detail }) => `- ${detail}`),
     ] : ['- 首版需求快照']),
-    ...handoff.versionChanges.map(({ field, previous: before, next: after }) =>
-      `- ${decisionFieldLabel(field)}：${decisionValueLabel(before)} → ${decisionValueLabel(after)}`,
+    ...summarizeConstraintChanges(handoff.versionChanges).map(({ field, before, after }) =>
+      `- ${decisionFieldLabel(field)}：${before} → ${after}`,
     ),
     '',
     '## 人工接手',

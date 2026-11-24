@@ -165,7 +165,7 @@ export function LandingHome({
       {/* Featured Cases */}
       <section className="portal-sec" aria-label="标杆案例">
         <h2 className="portal-h2">快速体验案例</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 16 }}>
           {[primaryCase, stageCase].map((demo) => (
             <div key={demo.id} className="surface-card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <h3 style={{ fontSize: 16.5, fontWeight: 600 }}>{demo.title}</h3>

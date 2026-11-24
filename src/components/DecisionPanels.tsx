@@ -9,7 +9,7 @@ import type {
 } from '../types/decisions';
 import {
   buildDecisionExport, buildDecisionMarkdown, decisionFieldLabel, decisionOutcomeLabel, decisionSourceLabel,
-  decisionValueLabel, REVISION_OPTION_LABELS,
+  decisionValueLabel, REVISION_OPTION_LABELS, summarizeConstraintChanges,
 } from '../utils/decisionHandoff';
 import { downloadTextFile } from '../utils/exporters';
 import './DecisionPanels.css';
@@ -99,6 +99,14 @@ export function CandidateComparison({ result, selected, onSelectCandidate }: Can
   const retained = selected?.status === 'eligible' &&
     !candidates.some(([, candidate]) => candidate?.id === selected.id) ? selected : null;
   const proposed = retained ? [...candidates, ['当前选定', retained] as const] : candidates;
+  const fabricCounts = new Map<string, number>();
+  const fabricPatternCounts = new Map<string, number>();
+  for (const [, candidate] of proposed) {
+    if (!candidate) continue;
+    fabricCounts.set(candidate.config.fabricId, (fabricCounts.get(candidate.config.fabricId) ?? 0) + 1);
+    const pairKey = `${candidate.config.fabricId}::${candidate.config.patternId}`;
+    fabricPatternCounts.set(pairKey, (fabricPatternCounts.get(pairKey) ?? 0) + 1);
+  }
   const review = result.review[0];
   const rejection = result.rejected[0];
 
@@ -113,14 +121,30 @@ export function CandidateComparison({ result, selected, onSelectCandidate }: Can
           if (!candidate) return null;
           const { fabric, pattern, crafts } = candidateNames(candidate);
           const active = selected?.id === candidate.id;
+          const fabricLabel = fabric?.shortName ?? candidate.config.fabricId;
+          const patternFullName = pattern?.name ?? candidate.config.patternId;
+          const sharesFabric = (fabricCounts.get(candidate.config.fabricId) ?? 0) > 1;
+          const sharesPair = (fabricPatternCounts.get(`${candidate.config.fabricId}::${candidate.config.patternId}`) ?? 0) > 1;
+          const patternParts = patternFullName.split(' · ');
+          const patternShort = patternParts.length > 1 ? patternParts.slice(1).join(' · ') : patternFullName;
+          const patternPrefix = patternParts.length > 1 ? patternParts[0] : '';
+          const craftShort = crafts.length ? crafts.join('、') : '基础工艺';
+          const headingTitle = sharesPair
+            ? `${fabricLabel} · ${patternShort}（${craftShort}）`
+            : sharesFabric
+              ? `${fabricLabel} · ${patternShort}`
+              : fabricLabel;
+          const subtitle = sharesFabric
+            ? [patternPrefix, crafts.length ? crafts.join('、') : '基础工艺（无附加细工）'].filter(Boolean).join(' · ')
+            : patternFullName;
           return (
             <article className={`decision-candidate${active ? ' decision-candidate-active' : ''}`} key={candidate.id}>
               <header className="decision-candidate-header">
                 <MaterialSwatch fabricId={candidate.config.fabricId} />
                 <div>
                   <p className="decision-caption">{label}</p>
-                  <h3>{fabric?.shortName ?? candidate.config.fabricId}</h3>
-                  <p>{pattern?.name ?? candidate.config.patternId}</p>
+                  <h3>{headingTitle}</h3>
+                  <p>{subtitle}</p>
                 </div>
               </header>
               <dl className="decision-factors">
@@ -191,19 +215,20 @@ interface RevisionWorkspaceProps {
 }
 
 function ChangeTable({ changes }: { changes: ConstraintChange[] }) {
-  if (changes.length === 0) return null;
+  const rows = summarizeConstraintChanges(changes);
+  if (rows.length === 0) return null;
   return (
     <div className="decision-scroll">
       <table className="decision-diff">
         <thead><tr><th scope="col">字段</th><th scope="col">此前</th><th scope="col">修改后</th></tr></thead>
         <tbody>
-          {changes.map(({ field, previous, next }, index) => (
-            <tr key={`${field}-${index}`}>
+          {rows.map(({ field, before, after, quotes }) => (
+            <tr key={field}>
               <th scope="row">{decisionFieldLabel(field)}</th>
-              <td>{decisionValueLabel(previous)}</td>
+              <td>{before}</td>
               <td>
-                {decisionValueLabel(next)}
-                {next?.quote && <small>「{next.quote}」</small>}
+                {after}
+                {quotes.length > 0 && <small>「{quotes.join('；')}」</small>}
               </td>
             </tr>
           ))}
@@ -213,19 +238,33 @@ function ChangeTable({ changes }: { changes: ConstraintChange[] }) {
   );
 }
 
-function BranchCard({ branch, version, onConfirm }: { branch: RevisionBranch; version: Version; onConfirm: (option: RevisionOption) => void }) {
+function BranchCard({
+  branch,
+  version,
+  hasConflictChoice,
+  onConfirm,
+}: {
+  branch: RevisionBranch;
+  version: Version;
+  hasConflictChoice: boolean;
+  onConfirm: (option: RevisionOption) => void;
+}) {
   const isDeferred = branch.option === 'defer';
   const previousHardIds = new Set(version.requirement.constraints.filter((item) => item.level === 'hard').map((item) => item.id));
   const carryForward = branch.requirement.constraints.filter((item) =>
     item.level === 'hard' && previousHardIds.has(item.id),
   );
+  const nonConflictingKeep = branch.option === 'keep' && !hasConflictChoice && branch.changes.length > 0;
   return (
     <article className="decision-candidate">
-      <h3>{REVISION_OPTION_LABELS[branch.option]}</h3>
+      <h3>{nonConflictingKeep ? '采纳改稿并沿用原硬条件' : REVISION_OPTION_LABELS[branch.option]}</h3>
       {isDeferred ? (
         <p>把反馈留给业务专员，继续沿用 V{version.number}。</p>
       ) : (
         <>
+          {nonConflictingKeep && (
+            <p className="decision-caption">本次反馈不与原硬条件冲突，确认后将按以下变更保存为 V{version.number + 1}。</p>
+          )}
           <ChangeTable changes={branch.changes} />
           <CandidateMaterial candidate={branch.candidate} />
           {carryForward.length > 0 && (
@@ -299,7 +338,15 @@ export function RevisionWorkspace({
                 </div>
               )}
               <div className="decision-branch-grid">
-                {preview.branches.map((branch) => <BranchCard key={branch.option} branch={branch} version={version} onConfirm={onConfirm} />)}
+                {preview.branches.map((branch) => (
+                  <BranchCard
+                    key={branch.option}
+                    branch={branch}
+                    version={version}
+                    hasConflictChoice={preview.branches.some((item) => item.option === 'accept')}
+                    onConfirm={onConfirm}
+                  />
+                ))}
               </div>
             </div>
           )}

@@ -23,10 +23,15 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 #root {
   min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
   display: flex;
   flex-direction: column;
 }
@@ -86,6 +91,9 @@ button {
   position: sticky;
   top: 0;
   z-index: 50;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .top-nav {
@@ -98,6 +106,8 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .brand-btn {
@@ -127,7 +137,15 @@ button {
   align-items: center;
   gap: 28px;
   height: 100%;
+  min-width: 0;
   overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.nav-links::-webkit-scrollbar,
+.demo-stepper-bar::-webkit-scrollbar {
+  display: none;
 }
 
 .nav-link {
@@ -202,7 +220,12 @@ button {
   display: flex;
   align-items: center;
   padding: 0 28px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .demo-stepper-inner {
@@ -593,11 +616,14 @@ button {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .page-wrap {
   width: 100%;
   max-width: 1320px;
+  min-width: 0;
   margin: 0 auto;
   padding: 36px 28px 64px;
 }
@@ -1950,16 +1976,29 @@ button {
 
 @media (max-width: 720px) {
   .top-nav {
-    padding: 0 16px;
+    padding: 0 12px;
+    gap: 10px;
+  }
+  .nav-links {
+    gap: 14px;
   }
   .demo-stepper-bar {
-    padding: 0 16px;
+    padding: 0 12px;
+  }
+  .demo-stepper-inner {
+    width: max-content;
+    min-width: 100%;
+    gap: 12px;
+    justify-content: flex-start;
+  }
+  .stepper-track {
+    flex-shrink: 0;
   }
   .stepper-connector {
     width: 14px;
   }
   .page-wrap {
-    padding: 24px 16px 48px;
+    padding: 24px 14px 48px;
   }
   .spec-8-grid,
   .proposal-spec-4-grid,
@@ -1970,6 +2009,6 @@ button {
   }
   .dossier-sheet,
   .docs-article {
-    padding: 22px 20px;
+    padding: 20px 16px;
   }
 }
