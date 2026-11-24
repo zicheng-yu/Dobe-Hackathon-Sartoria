@@ -27,9 +27,40 @@ function resolveDocImageSrc(rawSrc: string): string {
     .replace(/^public\//, '/');
 }
 
+function renderLinkLabel(label: string): ReactNode[] {
+  const nodes: ReactNode[] = [];
+  const pattern = /(\*\*[^*]+\*\*|`[^`]+`)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let keyIdx = 0;
+
+  while ((match = pattern.exec(label)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(label.slice(lastIndex, match.index));
+    }
+    const token = match[0];
+    keyIdx += 1;
+    if (token.startsWith('**') && token.endsWith('**')) {
+      nodes.push(<strong key={`lb-${keyIdx}`}>{token.slice(2, -2)}</strong>);
+    } else if (token.startsWith('`') && token.endsWith('`')) {
+      nodes.push(
+        <code key={`lc-${keyIdx}`} className="doc-inline-code">
+          {token.slice(1, -1)}
+        </code>
+      );
+    }
+    lastIndex = pattern.lastIndex;
+  }
+
+  if (lastIndex < label.length) {
+    nodes.push(label.slice(lastIndex));
+  }
+  return nodes;
+}
+
 function renderInline(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
-  const pattern = /(!\[[^\]]*\]\([^)]+\)|\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g;
+  const pattern = /(!\[[^\]]*\]\([^)]+\)|\[[^\]]+\]\([^)]+\)|\*\*[^*]+\*\*|`[^`]+`)/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
   let keyIdx = 0;
@@ -55,14 +86,6 @@ function renderInline(text: string): ReactNode[] {
       } else {
         nodes.push(token);
       }
-    } else if (token.startsWith('**') && token.endsWith('**')) {
-      nodes.push(<strong key={`b-${keyIdx}`}>{token.slice(2, -2)}</strong>);
-    } else if (token.startsWith('`') && token.endsWith('`')) {
-      nodes.push(
-        <code key={`c-${keyIdx}`} className="doc-inline-code">
-          {token.slice(1, -1)}
-        </code>
-      );
     } else if (token.startsWith('[')) {
       const lm = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(token);
       if (lm) {
@@ -76,12 +99,20 @@ function renderInline(text: string): ReactNode[] {
             target={isExternal ? '_blank' : undefined}
             rel={isExternal ? 'noreferrer' : undefined}
           >
-            {label}
+            {renderLinkLabel(label)}
           </a>
         );
       } else {
         nodes.push(token);
       }
+    } else if (token.startsWith('**') && token.endsWith('**')) {
+      nodes.push(<strong key={`b-${keyIdx}`}>{renderLinkLabel(token.slice(2, -2))}</strong>);
+    } else if (token.startsWith('`') && token.endsWith('`')) {
+      nodes.push(
+        <code key={`c-${keyIdx}`} className="doc-inline-code">
+          {token.slice(1, -1)}
+        </code>
+      );
     }
     lastIndex = pattern.lastIndex;
   }
