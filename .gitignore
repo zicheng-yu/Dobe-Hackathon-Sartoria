@@ -28,3 +28,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local demo video production intermediates (final web MP4 lives in public/video/)
+video-studio/

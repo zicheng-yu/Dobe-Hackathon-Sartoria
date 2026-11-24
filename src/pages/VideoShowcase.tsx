@@ -4,9 +4,10 @@ import {
   Check,
   CheckCircle2,
   Copy,
+  Download,
   PlayCircle,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { WorkspaceTab } from '../components/TopNav';
 import { SITE_CONFIG } from '../data/siteConfig';
 import type { PortalSection } from '../utils/router';
@@ -17,41 +18,54 @@ interface VideoShowcaseProps {
 
 const DEMO_SCRIPT_CHAPTERS: Array<{
   time: string;
+  startSec: number;
   title: string;
   detail: string;
   tab: WorkspaceTab;
 }> = [
   {
-    time: '0:00 – 0:40',
-    title: '需求拆解与信息边界',
-    detail: '演示自然语言拆解，输出 8 项定制参数并坚守未指定不代定色原则。',
+    time: '0:00 – 0:16',
+    startSec: 0,
+    title: '上海服装集团前期企划场景',
+    detail: '聚焦海派高定与团体职业服前期企划痛点，从 Sartoria 官网门户进入全流程交互工作台。',
     tab: 'requirements',
   },
   {
-    time: '0:40 – 1:30',
-    title: '场景选配与实时联动',
-    detail: '按需求筛选适配面料、版型、工艺与场景，实时联动 3D 面料光泽与版型图。',
+    time: '0:16 – 1:32',
+    startSec: 16,
+    title: '团装需求拆解、选配与改稿冲突裁决',
+    detail: '60 套秋季会务团装从口语拆解、逐字出处、方案对比与 3D/版型图联动，到改稿冲突拦截并确认 V2。',
     tab: 'configurator',
   },
   {
-    time: '1:30 – 2:15',
-    title: '定制方案与绘图提示词',
-    detail: '生成带搭配依据的方案初稿及即梦、Midjourney、Flux 三镜头提示词。',
+    time: '1:32 – 2:21',
+    startSec: 92,
+    title: '官方案例六边界守护、方案初稿与三镜头提示词',
+    detail: '演示未指定不代定色、宽肩体态工学转译、单行合并改稿差异、同面料标题消歧与三镜头视觉提示词。',
     tab: 'proposal',
   },
   {
-    time: '2:15 – 3:00',
-    title: '项目档案追溯与导出',
-    detail: '回看原始需求与修改前后 Diff，在线编辑复核状态并导出 UTF-8 CSV。',
+    time: '2:21 – 2:51',
+    startSec: 141,
+    title: '项目档案、可追溯交接导出与工程验收',
+    detail: '全宽项目档案对照 V1/V2 变更，导出 Markdown 与 JSON 交接包并刷新验证持久化，明确人机边界。',
     tab: 'ledger',
   },
 ];
 
 export function VideoShowcase({ onNavigate }: VideoShowcaseProps) {
   const [copied, setCopied] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const { video } = SITE_CONFIG;
   const hasVideo = Boolean(video.embedUrl || video.localMp4Path || video.externalUrl);
   const pageUrl = `${SITE_CONFIG.siteUrl}/video`;
+
+  const handleSeekToChapter = (sec: number) => {
+    const el = videoRef.current;
+    if (!el) return;
+    el.currentTime = sec;
+    el.play().catch(() => {});
+  };
 
   return (
     <div className="page-wrap">
@@ -94,10 +108,12 @@ export function VideoShowcase({ onNavigate }: VideoShowcaseProps) {
         ) : video.localMp4Path ? (
           <div className="video-frame-16-9">
             <video
+              ref={videoRef}
               controls
               playsInline
-              poster="/assets/official1-studio-jacket.jpg"
-              style={{ width: '100%', height: '100%', borderRadius: 12, background: '#111' }}
+              preload="metadata"
+              poster={video.posterPath || '/assets/official1-studio-jacket.jpg'}
+              style={{ width: '100%', height: '100%', borderRadius: 12, background: '#ffffff' }}
             >
               <source src={video.localMp4Path} type="video/mp4" />
             </video>
@@ -130,17 +146,48 @@ export function VideoShowcase({ onNavigate }: VideoShowcaseProps) {
           </div>
         )}
 
-        {hasVideo && video.externalUrl && (
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 14 }}>
-            <a
-              href={video.externalUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="btn-outline"
-            >
-              <span>打开原视频</span>
-              <ArrowUpRight size={14} />
-            </a>
+        {hasVideo && (
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 12,
+              marginTop: 14,
+              paddingTop: 12,
+              borderTop: '1px solid var(--border-hairline)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <span className="tag-minimal" style={{ fontFamily: 'var(--font-mono)' }}>
+                {video.durationLabel} · 1080P
+              </span>
+              <span style={{ fontSize: 13, color: 'var(--ink-secondary)' }}>{video.subtitle}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              {video.localMp4Path && (
+                <a
+                  href={video.localMp4Path}
+                  download="sartoria-demo-3min.mp4"
+                  className="btn-outline"
+                >
+                  <Download size={14} />
+                  <span>下载 MP4</span>
+                </a>
+              )}
+              {video.externalUrl && (
+                <a
+                  href={video.externalUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-outline"
+                >
+                  <span>打开原视频</span>
+                  <ArrowUpRight size={14} />
+                </a>
+              )}
+            </div>
           </div>
         )}
       </section>
@@ -153,9 +200,21 @@ export function VideoShowcase({ onNavigate }: VideoShowcaseProps) {
               <div key={ch.time} className="ledger-block">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
                   <strong style={{ fontSize: 13.5 }}>{ch.title}</strong>
-                  <span className="tag-minimal" style={{ fontFamily: 'var(--font-mono)' }}>
-                    {ch.time}
-                  </span>
+                  {video.localMp4Path ? (
+                    <button
+                      type="button"
+                      className="tag-minimal"
+                      style={{ fontFamily: 'var(--font-mono)', cursor: 'pointer' }}
+                      onClick={() => handleSeekToChapter(ch.startSec)}
+                      title={`跳转至 ${ch.time}`}
+                    >
+                      {ch.time}
+                    </button>
+                  ) : (
+                    <span className="tag-minimal" style={{ fontFamily: 'var(--font-mono)' }}>
+                      {ch.time}
+                    </span>
+                  )}
                 </div>
                 <p style={{ fontSize: 13, color: 'var(--ink-secondary)', marginTop: 6, lineHeight: 1.6 }}>
                   {ch.detail}

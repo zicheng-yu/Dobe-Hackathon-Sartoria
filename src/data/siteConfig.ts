@@ -11,20 +11,20 @@ export const SITE_CONFIG = {
   },
   /**
    * 3 分钟 Demo 视频配置：
-   * 录屏上传至 B 站 / 腾讯视频 / YouTube（公开无密码直链）后，
-   * 只需填写 externalUrl / embedUrl（或将视频文件放到 public/video/ 后填写 localMp4Path），
-   * 推送至 GitHub main 分支，Cloudflare Workers Builds 将自动构建并同步上线至 sartoria.zichengyu.com/video。
+   * 成片静态托管于 public/video/，推送至 GitHub main 分支后由 Cloudflare Workers Builds
+   * 自动构建并发布至 https://sartoria.zichengyu.com/video 公开无密码直连播放。
    */
   video: {
     title: 'Sartoria AI · 3 分钟端到端海派定制企划闭环演示',
-    subtitle: '主 Demo：官方案例六（交领开襟真丝暗纹外套）＋ 对比案例三（户外舞台两件式演出套装）',
+    subtitle: '双案例全流程真实操作：60 套秋季会务团装（冲突裁决）＋ 官方案例六高定外套（未指定不代定色 · 三镜头提示词）',
     externalUrl: '',
     embedUrl: '',
-    localMp4Path: '',
-    durationLabel: '约 3 分钟',
+    localMp4Path: '/video/sartoria-demo-3min.mp4',
+    posterPath: '/video/poster.jpg',
+    durationLabel: '2:51',
     hostingChecklist: [
-      '公开可访问直链（推荐 B 站 / 腾讯视频 / YouTube），不设访问密码',
-      '上传完成后先用浏览器未登录无痕窗口试播，确认音画与链接均正常',
+      '由 Cloudflare Workers 直接托管于 sartoria.zichengyu.com/video，支持公开无密码直连与流式播放',
+      '已通过浏览器未登录无痕窗口验证音画同步、章节跳转与 1080P 播放正常',
       '仅使用可公开的模拟静态定制素材，不展示真实客户隐私或生产系统信息',
     ],
   },
