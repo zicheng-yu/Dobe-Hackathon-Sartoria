@@ -4,6 +4,7 @@ import { ASSET_SOURCE_LABELS, DECISION_CATALOG, SIMULATED_CARE_LABELS } from '..
 import { FABRICS } from '../data/fabrics';
 import { PATTERNS } from '../data/patterns';
 import { SCENES } from '../data/scenes';
+import { colorReviewText } from '../engine/colorPresentation';
 import type { AssetSource } from '../types/decisions';
 import type { LedgerRecord, ProposalDraft, VisualPromptPack } from '../types/sartoria';
 
@@ -59,7 +60,8 @@ export function buildLedgerCsv(records: LedgerRecord[]): string {
       rec.status,
       rec.config ? (rec.decisionHistory ? `规则匹配分 ${rec.matchScore}` : `${rec.matchScore}%`) : '待核',
       rec.requirementInput.rawNarrative,
-      rec.deconstructed.colorSpecifiedByUser ? '客户已表达色彩倾向（待米样核色）' : '客户未指定颜色（不代客定色）',
+      rec.deconstructed.colorSpecifiedByUser ? '客户已表达色彩倾向（待米样核色）'
+        : colorReviewText(rec.deconstructed) ?? '客户未指定颜色（不代客定色）',
       pat ? `${pat.code} ${pat.name}` : rec.config?.patternId ?? '暂无合格组合',
       fab ? `${fab.code} ${fab.name}` : rec.config?.fabricId ?? '待核',
       craftNames || (rec.config ? '基准工艺' : '待核'),
@@ -168,7 +170,7 @@ export function buildProposalMarkdown(proposal: ProposalDraft): string {
     ...proposal.threeBuckets.needsHumanVerification.map((x) => `- ${x}`),
     '',
     '## 二、8 项专业定制参数转化',
-    ...proposal.officialSpecs.map((s) => `- **【${s.label}】** ${s.value}`),
+    ...proposal.officialSpecs.map((s) => `- **【${s.label}】** ${s.value}${s.key === 'color' && s.sourceQuote ? ` · 原话「${s.sourceQuote}」` : ''}`),
     '',
     '## 三、四类静态模拟资产匹配依据',
     ...proposal.resourceBasis.map(

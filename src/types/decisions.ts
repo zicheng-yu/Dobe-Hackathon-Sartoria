@@ -47,6 +47,7 @@ export interface Constraint {
   quote: string | null;
   verifiedBy: string | null;
   reason: string | null;
+  quantityScope?: 'order' | 'batch';
   blocking?: true;
   withdraws?: { op: 'eq' | 'neq'; value: NonNullable<ConstraintValue> };
 }
@@ -63,6 +64,10 @@ export interface DecisionRequirement {
   turns: RequirementTurn[];
   constraints: Constraint[];
   questions: ClarificationQuestion[];
+  onlineReview?: {
+    notes: string[];
+    questions: string[];
+  };
 }
 
 export interface AssetSource {

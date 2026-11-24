@@ -4,6 +4,7 @@ import { FABRICS } from '../data/fabrics';
 import { PATTERNS } from '../data/patterns';
 import { PRESET_DEMO_CASES } from '../data/presetDemos';
 import { SCENES } from '../data/scenes';
+import { colorReviewText } from './colorPresentation';
 import type {
   ConfigurationState,
   CraftAsset,
@@ -446,12 +447,13 @@ export function evaluateFeasibility(
   }
 
   if (deconstructed && !deconstructed.colorSpecifiedByUser) {
+    const colorReview = colorReviewText(deconstructed);
     notices.push({
       id: 'feas-color-unassigned',
       level: 'caution',
       dimension: '人工边界',
-      title: '客户未指定颜色 · 禁止 AI 代客定色',
-      detail: '当前视觉与选配预览仅作廓形与暗纹肌理示意，最终成衣色彩须由顾问携实物面料色卡线下与客户确认。',
+      title: colorReview ? '用色待人工核对' : '客户未指定颜色 · 禁止 AI 代客定色',
+      detail: `${colorReview ? `${colorReview}。` : ''}当前视觉与选配预览仅作廓形与肌理示意，最终成衣色彩须由顾问携实物面料色卡线下与客户确认。`,
     });
   }
 

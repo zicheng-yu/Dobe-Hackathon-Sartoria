@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { constraintPredicatesConflict, describeRequirementValue, isRequirementValue, requirementFields } from '../engine/requirementInterview';
+import {
+  applyConstraintEdit, describeRequirementValue, isPendingQuantityBreakdown, isRequirementValue, requirementFields,
+} from '../engine/requirementInterview';
+import { quantityScopeOf } from '../engine/requirementQuantity';
 import type { Constraint, DecisionRequirement } from '../types/decisions';
 import './RequirementConstraints.css';
 
@@ -41,6 +44,7 @@ function ConstraintEditor({ item, onSave, onCancel }: ConstraintEditorProps) {
       blocking: level === 'pending' && (item.level === 'hard' || item.blocking) ? true : undefined,
       sourceTurnId: keepSource ? item.sourceTurnId : null,
       quote: keepSource ? item.quote : null,
+      quantityScope: item.field === 'quantity' ? quantityScopeOf(item) : undefined,
       verifiedBy: level === 'pending' ? null : '业务顾问',
       reason: level === 'pending' ? '业务顾问将该字段设为待确认。' : null,
       withdraws: undefined,
@@ -92,19 +96,11 @@ interface RequirementConstraintsProps {
 
 export function RequirementConstraints({ requirement, onEdit }: RequirementConstraintsProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
-  const { constraints, questions, turns } = requirement;
+  const { constraints, questions, turns, onlineReview } = requirement;
 
   function save(item: Constraint) {
     if (!onEdit) return;
-    onEdit(constraints.flatMap((constraint) => {
-      if (constraint.id === item.id) return [item];
-      if (constraint.field === item.field && (
-        item.state === 'unknown' || constraint.state === 'unknown' ||
-        constraintPredicatesConflict(constraint, item) ||
-        constraint.value === item.value
-      )) return [];
-      return [constraint];
-    }));
+    onEdit(applyConstraintEdit(constraints, item));
     setEditingId(null);
   }
 
@@ -128,10 +124,16 @@ export function RequirementConstraints({ requirement, onEdit }: RequirementConst
           <div className="constraint-inline-main">
             <span className="constraint-field">{fieldLabel}</span>
             <span className="constraint-value">
-              {item.op === 'neq' ? '排除 · ' : ''}{describeRequirementValue(item.field, item.value)}
+              {item.op === 'neq' ? '排除 · ' : ''}
+              {describeRequirementValue(
+                item.field,
+                item.value,
+                item.quote ?? (item.state === 'suggested' ? requirement.input.groupSize : null),
+                item.quantityScope
+              )}
             </span>
           </div>
-          {onEdit && editingId !== item.id && (
+          {onEdit && editingId !== item.id && !isPendingQuantityBreakdown(item) && (
             <button type="button" className="btn-outline" aria-label={`编辑${fieldLabel}`} onClick={() => setEditingId(item.id)}>
               {item.level === 'pending' ? '补充' : '编辑'}
             </button>
@@ -172,7 +174,6 @@ export function RequirementConstraints({ requirement, onEdit }: RequirementConst
           <ul>{questions.map(({ field, question }) => <li key={field}>{question}</li>)}</ul>
         </div>
       )}
-
       <div className="constraint-main-grid">
         <section className="constraint-group" aria-label="必须满足">
           <h3>
@@ -235,6 +236,19 @@ export function RequirementConstraints({ requirement, onEdit }: RequirementConst
           )}
         </section>
       )}
+
+      {onlineReview?.notes.length ? (
+        <div className="constraint-questions">
+          <h3>在线拆解待核</h3>
+          <ul>{onlineReview.notes.map((note) => <li key={note}>{note}</li>)}</ul>
+        </div>
+      ) : null}
+      {onlineReview?.questions.length ? (
+        <div className="constraint-questions">
+          <h3>在线建议追问</h3>
+          <ul>{onlineReview.questions.map((question) => <li key={question}>{question}</li>)}</ul>
+        </div>
+      ) : null}
     </section>
   );
 }

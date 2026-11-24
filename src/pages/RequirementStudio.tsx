@@ -13,6 +13,7 @@ import { RadarChartSVG } from '../components/RadarChartSVG';
 import { RequirementConstraints } from '../components/RequirementConstraints';
 import { PRESET_DEMO_CASES } from '../data/presetDemos';
 import { SCENES } from '../data/scenes';
+import { colorReviewText } from '../engine/colorPresentation';
 import { describeRequirementValue } from '../engine/requirementInterview';
 import type { Constraint, ConstraintField, DecisionRequirement } from '../types/decisions';
 import type {
@@ -116,16 +117,16 @@ export function RequirementStudio({
   const isOnlineLlm = deconstructed.engineUsed === 'llm_api';
   const byField = (field: ConstraintField) => decisionRequirement?.constraints.filter((item) => item.field === field) ?? [];
   const dimensions = decisionRequirement ? deconstructed.dimensions.map((dimension) => {
+    if (dimension.key === 'colorSystem') return dimension;
     const fieldsByDimension: Partial<Record<typeof dimension.key, ConstraintField[]>> = {
       silhouetteReq: ['patternStructure', 'easeAllowance'], fabricTexture: ['fabric', 'luster'],
-      craftDetail: ['collar', 'motif', 'closure', 'craft'], colorSystem: ['color'], sceneFit: ['scene'],
+      craftDetail: ['collar', 'motif', 'closure', 'craft'], sceneFit: ['scene'],
     };
     const fields = fieldsByDimension[dimension.key];
     if (!fields) return dimension;
     const values = fields.flatMap(byField).filter(({ value }) => value !== null);
     if (values.length) return { ...dimension, value: specText(values) };
-    const keepOnlineDimension = isOnlineLlm && (dimension.key !== 'colorSystem' || deconstructed.colorSpecifiedByUser);
-    return { ...dimension, value: keepOnlineDimension ? dimension.value : '待确认' };
+    return { ...dimension, value: isOnlineLlm ? dimension.value : '待确认' };
   }) : deconstructed.dimensions;
   const quota = workerStatus?.quota;
 
@@ -593,7 +594,9 @@ export function RequirementStudio({
                       );
                       const preserveReferenceCopy = Boolean(decisionRequirement?.input.presetDemoId) && constraint?.state === 'suggested';
                       const preserveOnlineCopy = isOnlineLlm && !hasHardOrUnknown && (item.key !== 'color' || deconstructed.colorSpecifiedByUser);
-                      const value = decisionRequirement && !preserveReferenceCopy && !preserveOnlineCopy ? specText(constraints) || '待确认' : item.value;
+                      const showColorSpec = item.key === 'color' && constraints.some(({ blocking, value }) => blocking || value !== null);
+                      const value = decisionRequirement && !preserveReferenceCopy && !preserveOnlineCopy && !showColorSpec
+                        ? specText(constraints) || '待确认' : item.value;
                       return (
                         <div key={item.key} className="spec-cell">
                           <div className="spec-cell-head">
@@ -604,7 +607,7 @@ export function RequirementStudio({
                             </span>
                           </div>
                           <div className="spec-value">{value}</div>
-                          {(!decisionRequirement || preserveOnlineCopy) && item.sourceQuote && (
+                          {(!decisionRequirement || preserveOnlineCopy || item.key === 'color') && item.sourceQuote && (
                             <div style={{ fontSize: 12, color: 'var(--ink-muted)' }}>
                               依据：「{item.sourceQuote}」
                             </div>
@@ -701,7 +704,7 @@ export function RequirementStudio({
                 {!deconstructed.colorSpecifiedByUser && (
                   <span className="meta-badge">
                     <span className="status-dot dot-caution" />
-                    <span>未指定色彩 · 待人工核色</span>
+                    <span>{colorReviewText(deconstructed) ? '用色待人工核对' : '未指定色彩 · 待人工核色'}</span>
                   </span>
                 )}
               </div>

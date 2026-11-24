@@ -7,6 +7,7 @@ import { DECISION_CATALOG } from '../data/decisionCatalog';
 import { FABRICS } from '../data/fabrics';
 import { PATTERNS } from '../data/patterns';
 import { SCENES } from '../data/scenes';
+import { colorReviewText } from '../engine/colorPresentation';
 import type { ResolvedStageVisual } from '../engine/visualResolver';
 import type { CandidateCombination, MatchResult } from '../types/decisions';
 import type {
@@ -257,7 +258,7 @@ export function ConfiguratorStudio({
 
             {!deconstructed.colorSpecifiedByUser && (
               <div style={{ fontSize: 12, color: 'var(--ink-muted)', marginTop: 6 }}>
-                未指定颜色，最终以实物色卡为准
+                {colorReviewText(deconstructed) ?? '未指定颜色'}，最终以实物色卡为准
               </div>
             )}
 

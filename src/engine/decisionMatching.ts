@@ -13,6 +13,8 @@ import type {
   MatchResult,
 } from '../types/decisions';
 import type { ConfigurationState } from '../types/sartoria';
+import { sameQuantityScope } from './requirementInterview';
+import { describeOrderQuantity } from './requirementQuantity';
 
 type PatternRecord = (typeof DECISION_CATALOG.patterns)[number];
 type FabricRecord = (typeof DECISION_CATALOG.fabrics)[number];
@@ -25,7 +27,7 @@ const crafts = new Map(DECISION_CATALOG.crafts.map((record) => [record.asset.id,
 const scenes = new Map(SCENES.map((scene) => [scene.id, scene]));
 
 const fieldLabels: Record<ConstraintField, string> = {
-  businessType: '业务类型', quantity: '套数', scene: '使用场景', season: '穿着季节',
+  businessType: '业务类型', quantity: '订量', scene: '使用场景', season: '穿着季节',
   category: '成衣品类', patternStructure: '版型结构', collar: '领型', fabric: '材质',
   color: '颜色', motif: '纹样', lengthRatio: '长度比例', easeAllowance: '抬臂与松量',
   closure: '门襟扣件', care: '洗护', wrinkleResistance: '耐皱', luster: '光泽',
@@ -92,7 +94,9 @@ function checkConstraint(
   actualText = describeValue(actual),
 ): AssetEvidence {
   const outcome = constraintOutcome(constraint, actual, equals);
-  const requested = `${constraint.op === 'neq' ? '排除 ' : ''}${describeValue(constraint.value)}`;
+  const requestedValue = constraint.field === 'quantity' && typeof constraint.value === 'number'
+    ? describeOrderQuantity(constraint.value, constraint.quote, constraint.quantityScope) : describeValue(constraint.value);
+  const requested = `${constraint.op === 'neq' ? '排除 ' : ''}${requestedValue}`;
   const label = `${asset.code} · ${fieldLabels[constraint.field]}`;
   const intent = constraint.level === 'preference' ? '偏好' : '要求';
   return evidence(asset, constraint.field, actual, outcome,
@@ -200,16 +204,17 @@ function evaluate(requirement: DecisionRequirement, config: ConfigurationState) 
     }
   }
 
-  const statedOrderSize = requirement.constraints.find((item) => item.field === 'quantity' &&
-    item.op === 'eq' && item.level === 'hard' && typeof item.value === 'number')?.value;
+  const statedQuantities = requirement.constraints.filter((item) => item.field === 'quantity' &&
+    item.op === 'eq' && item.level === 'hard' && typeof item.value === 'number');
   const quantityChecks = (constraint: Constraint) => [
     { record: pattern, asset: patternAsset }, { record: fabric, asset: fabricAsset },
   ].map(({ record, asset }) => {
     const range = record?.profile.quantity;
     const value = range ? `${range[0]}–${range[1]}` : null;
-    if (constraint.op === 'neq' && typeof statedOrderSize === 'number') {
-      return checkConstraint(teamEvidence(asset), constraint, statedOrderSize,
-        statedOrderSize === constraint.value, `已确认的订单数量 ${statedOrderSize} 套`);
+    const stated = constraint.op === 'neq' ? statedQuantities.find((item) => sameQuantityScope(item, constraint)) : undefined;
+    if (typeof stated?.value === 'number') {
+      return checkConstraint(teamEvidence(asset), constraint, stated.value,
+        stated.value === constraint.value, `已确认的数量 ${describeOrderQuantity(stated.value, stated.quote, stated.quantityScope)}`);
     }
     const within = range && typeof constraint.value === 'number'
       && range[0] <= constraint.value && constraint.value <= range[1];

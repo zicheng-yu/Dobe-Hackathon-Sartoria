@@ -202,6 +202,9 @@ export function ProposalAndPrompts({
                     <span className="spec-value" style={{ fontSize: 13 }}>
                       {spec.value}
                     </span>
+                    {spec.key === 'color' && spec.sourceQuote && (
+                      <div style={{ fontSize: 12, color: 'var(--ink-muted)' }}>客户原话「{spec.sourceQuote}」</div>
+                    )}
                   </div>
                 );
               })}

@@ -1,9 +1,9 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempDisposableSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join, resolve } from 'node:path';
-import { expect, test, vi } from 'vitest';
+import { afterAll, beforeAll, expect, test, vi } from 'vitest';
 import { HISTORICAL_CASES } from '../src/data/cases';
 import { CRAFTS } from '../src/data/crafts';
 import { DECISION_CATALOG } from '../src/data/decisionCatalog';
@@ -27,12 +27,16 @@ import { fixtures, type CatalogExpectation, type Fixture, type FixtureTurn, type
 import { holdout } from './holdout';
 import { HOLDOUT2_FIXTURES } from './holdout2';
 import { HOLDOUT3_FIXTURES } from './holdout3';
+import { freeTextFixtures } from './freeText20261124';
+import { postRepairFixtures } from './postRepairBlind';
 
 const BASELINE = '4e0d95921683fd04cf7834b754b02687d73d56a6';
 const FROZEN_SHA256 = '731df75840720f873ffd0846fbbaac0ebb7d0ca13716d8a42bb51f3d7239943a';
 const HOLDOUT_SHA256 = 'a053040ea829964de4bd6f62239aef063c89876dfb31ff8cb40677e3db0180f2';
 const HOLDOUT2_SHA256 = '3cb9a202d55270895d783c2a5705078dac778b8dc717a1f6e40fbf3d092791bc';
 const HOLDOUT3_SHA256 = '87975f8f6146c78f54fcb85594ef10b787c1127a5b0d5bc322522de6c59f27b9';
+const FREE_TEXT_SHA256 = 'c9144cd09a54ec7ffd43c91180ab29fdaeabb54c83169fe33dfd019eb4660916';
+const POST_REPAIR_SHA256 = 'd87bf1751d2d9d5d15b1a395aa74564d1fc6ba4952767732f203721959c888e2';
 const RUN_TIME = '2026-11-24T00:00:00.000Z';
 const gitArgs = ['-c', `safe.directory=${resolve('.').replaceAll('\\', '/')}`];
 
@@ -47,10 +51,14 @@ const releaseSuites = [
     assumeNoConflictsWhenOmitted: false },
   { id: '3', fixtures: HOLDOUT3_FIXTURES, source: 'holdout3.ts', hash: HOLDOUT3_SHA256, report: `release-3-${releaseSha}.json`,
     assumeNoConflictsWhenOmitted: false },
+  { id: '4', fixtures: freeTextFixtures, source: 'freeText20261124.ts', hash: FREE_TEXT_SHA256, report: `release-4-${releaseSha}.json`,
+    assumeNoConflictsWhenOmitted: false },
+  { id: '5', fixtures: postRepairFixtures, source: 'postRepairBlind.ts', hash: POST_REPAIR_SHA256, report: `release-5-${releaseSha}.json`,
+    assumeNoConflictsWhenOmitted: false },
 ];
 const requestedSuite = process.env.SARTORIA_RELEASE_SUITE;
 if (releaseSha !== undefined && requestedSuite !== undefined && !releaseSuites.some(({ id }) => id === requestedSuite)) {
-  throw new Error('SARTORIA_RELEASE_SUITE must be 1, 2, or 3.');
+  throw new Error(`SARTORIA_RELEASE_SUITE must be one of ${releaseSuites.map(({ id }) => id).join(', ')}.`);
 }
 const suites = releaseSha === undefined
   ? [{ id: 'historical', fixtures, source: 'fixtures.ts', hash: FROZEN_SHA256, report: 'report.json',
@@ -88,8 +96,7 @@ function scratchInput(projectName: string, rawNarrative: string): RequirementInp
   };
 }
 
-function runBaseline() {
-  const cache = resolve('node_modules/.cache/sartoria-baseline', BASELINE);
+function loadBaseline(cache: string) {
   const source = join(cache, 'source');
   const compiled = join(cache, 'cjs');
   const archive = join(cache, 'source.tar');
@@ -131,6 +138,16 @@ function runBaseline() {
     } as Catalog,
   };
 }
+
+const reportDirectory = resolve('node_modules/.cache/sartoria-baseline');
+let scratch: ReturnType<typeof mkdtempDisposableSync>;
+let baseline: ReturnType<typeof loadBaseline>;
+beforeAll(() => {
+  mkdirSync(reportDirectory, { recursive: true });
+  scratch = mkdtempDisposableSync(join(reportDirectory, 'run-'));
+  baseline = loadBaseline(scratch.path);
+});
+afterAll(() => scratch?.remove());
 
 const tripleKey = ({ field, op, value }: Triple) => JSON.stringify([field, op, value]);
 const hard = (requirement: DecisionRequirement) => requirement.constraints.filter((item) =>
@@ -518,6 +535,28 @@ function sum(metrics: readonly { tp: number; fp: number; fn: number }[]) {
   }), { tp: 0, fp: 0, fn: 0 });
 }
 
+// Same first message and gold labels. Only clause punctuation/spacing changes.
+function probeFormatting(fixture: Fixture, catalog: Catalog, original: DecisionRequirement, match: MatchResult) {
+  const turn = fixture.turns[0];
+  const originalFacts = hard(original).map(tripleKey);
+  const originalChoices = [match.recommended?.id, match.alternative?.id];
+  return ['chatLines', 'unpunctuated'].map((format) => {
+    const text = turn.text.replace(/[，。；！？、,;!?]+/gu, format === 'chatLines' ? '\n' : ' ').trim();
+    const parsed = buildLocalDecisionRequirement(scratchInput(fixture.id, text));
+    const options = matchDecision(parsed);
+    const candidates = [options.recommended, options.alternative].filter((candidate) => candidate !== null);
+    const audits = candidates.map((candidate) => auditConfig(candidate.config, turn.hard, catalog, false));
+    const extracted = hard(parsed);
+    const { tp, fp, fn } = hardScore(turn.hard, extracted);
+    return {
+      format, changedText: text !== turn.text, hardChanged: !sameSet(originalFacts, extracted.map(tripleKey)),
+      optionsChanged: options.recommended?.id !== originalChoices[0] || options.alternative?.id !== originalChoices[1],
+      score: { tp, fp, fn }, knownViolation: [...new Set(audits.flatMap(({ violations }) => violations))],
+      unverifiedHard: [...new Set(audits.flatMap(({ unknowns }) => unknowns))],
+    };
+  });
+}
+
 test.each(suites)('replays $source and writes the evaluation report', (suite) => {
   if (releaseSha !== undefined) verifyReleaseSource(releaseSha);
   const frozenText = readFileSync(resolve('evaluation', suite.source), 'utf8').replaceAll('\r\n', '\n');
@@ -525,7 +564,6 @@ test.each(suites)('replays $source and writes the evaluation report', (suite) =>
   expect(suite.fixtures).toHaveLength(24);
   expect(suite.fixtures.flatMap(({ turns }) => turns)).toHaveLength(36);
   const revisionCount = suite.fixtures.filter(({ group }) => group === 'multi-round-revisions').length;
-  const baseline = runBaseline();
   const catalog = { patterns: PATTERNS, fabrics: FABRICS, crafts: CRAFTS, scenes: SCENES, cases: HISTORICAL_CASES };
   const storage = new Map<string, string>();
   vi.stubGlobal('window', {
@@ -570,6 +608,7 @@ test.each(suites)('replays $source and writes the evaluation report', (suite) =>
         : null;
       return {
         id: fixture.id, group: fixture.group, catalogOutcome: catalogExpected?.outcome ?? null,
+        ...(suite.id === '4' || suite.id === '5' ? { formatting: probeFormatting(fixture, catalog, requirement, matching) } : {}),
         old: { score: oldScore, equivalentScore: oldEquivalent, negation: hardScore(turn.hard.filter((item) => item.op === 'neq'), old.triples.filter((item) => item.op === 'neq')),
           manual: manualEffort(oldScore, old.ambiguous), unknownId: oldAudit.unknownId, knownViolation: oldUnwarned,
           fakeClaim: preferred && oldAudit.violations.includes('craftCompatibility'),
@@ -664,8 +703,10 @@ test.each(suites)('replays $source and writes the evaluation report', (suite) =>
         ? null : report.catalogChecks.blocked.passed === report.catalogChecks.blocked.total,
       quoteSourceTracing: report.sourceQuoteTotal > 0 && report.sourceQuotes === report.sourceQuoteTotal,
     };
-    const output = resolve('node_modules/.cache/sartoria-baseline', suite.report);
-    writeFileSync(output, JSON.stringify({ ...report, gates }, null, 2));
+    const output = join(reportDirectory, suite.report);
+    const runReport = join(scratch.path, suite.report);
+    writeFileSync(runReport, JSON.stringify({ ...report, gates }, null, 2));
+    renameSync(runReport, output);
     console.log(JSON.stringify({ ...report, gates, rows: undefined, fullReport: output }, null, 2));
     if (gates) {
       const failures = Object.entries(gates).filter(([, passed]) => passed === false).map(([gate]) => gate);

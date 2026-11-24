@@ -13,6 +13,7 @@ import type {
   ResourceBasisItem,
   WorkflowStageSummary,
 } from '../types/sartoria';
+import { colorReviewText } from './colorPresentation';
 import { evaluateMatch } from './matchingEngine';
 
 export function generateProposalDraft(
@@ -28,6 +29,7 @@ export function generateProposalDraft(
   const crafts = CRAFTS.filter((c) => config.craftIds.includes(c.id));
   const match = matchOverride ?? evaluateMatch(input, deconstructed, config);
   const similarCases = HISTORICAL_CASES.filter((hc) => match.similarCaseIds.includes(hc.id));
+  const colorReview = colorReviewText(deconstructed);
 
   const extraDays = crafts.reduce((sum, c) => sum + c.extraLeadDays, 0);
   const totalRefDays = pattern.baseLeadDays + extraDays;
@@ -83,7 +85,7 @@ export function generateProposalDraft(
       step: 3,
       title: '面料选型与米样核色',
       owner: '人机协同核实',
-      status: deconstructed.colorSpecifiedByUser ? '待实物米样核色' : '未定色 · 待人工核色',
+      status: deconstructed.colorSpecifiedByUser ? '待实物米样核色' : colorReview ? '用色待核' : '未定色 · 待人工核色',
       detail: 'AI 给出风格/体感/体型三维选料依据；实物色卡、克重手感与暗纹尺度须顾问线下与客户核定。',
     },
     {
@@ -117,7 +119,7 @@ export function generateProposalDraft(
       ? `工艺细节组合：叠加${crafts.map((c) => `「${c.name}」`).join('、')}，${crafts[0].highlightCopy}`
       : '克制极简：保留净面立体剪裁与内里包边精工，突出面料自然肌理。',
     !deconstructed.colorSpecifiedByUser
-      ? '色彩留白声明：客户原话未指定颜色，本方案不代客定色，待线下实物色卡核定。'
+      ? `${colorReview ?? '客户原话未指定颜色'}。顾问须携实物色卡与客户核定成衣用色。`
       : `色彩与场景适配：适配「${scene.name}（${scene.lighting.colorTempLabel}）」，最终显色以工坊米样为准。`,
   ];
 
@@ -131,7 +133,7 @@ export function generateProposalDraft(
     : [
         deconstructed.colorSpecifiedByUser
           ? '定制顾问邀约客户在工坊高显色光源下触感比对实物面料米样与色泽'
-          : '【必核项】客户未指定颜色，须由顾问携多组实物面料色卡线下与客户确认颜色（AI 不代客定色）',
+          : `【必核项】${colorReview ? '按客户用色原话复核' : '客户未指定颜色'}，须由顾问携多组实物面料色卡线下与客户确认颜色`,
         '【必核项】资深版师实测净体尺寸并核定肩宽/背宽/袖笼/腰腹具体松量厘米数，完成人工 CAD 定版与试身',
         '手工工坊人工确认工艺位点、暗花对位与制作排期（不做自动打样与排产）',
         '由定制专员与客户完成正式报价确认、合同签署与下单流程（AI 不介入商务决策）',

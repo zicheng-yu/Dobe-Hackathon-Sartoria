@@ -270,8 +270,41 @@ async function verifyLocal() {
   }
   assert.equal(foundOriginal, true);
   const pending = await verifyPendingVersions();
+  const rosterQuantity = await verifySpokenOrder();
+  await verifyConflictingVenue();
   assert.deepEqual(errors, []);
-  console.log(JSON.stringify({ conference, case6: case6.version.candidate.config.patternId, case3: case3.version.candidate.config.patternId, sameNameProjects: 2, pending, blockedOrigins: [...new Set(external)] }));
+  console.log(JSON.stringify({ conference, case6: case6.version.candidate.config.patternId, case3: case3.version.candidate.config.patternId, sameNameProjects: 2, pending, rosterQuantity, venueConflictBlocked: true, blockedOrigins: [...new Set(external)] }));
+}
+
+async function verifyConflictingVenue() {
+  await click(page, '新建需求');
+  const text = '这次我给自己订一套两件式演出服。剧组说这场演出的地点必须在户外，也必须是室内的。';
+  await page.getByLabel('客户原话').fill(text);
+  await analyze();
+  await assertText(region('必须满足'), '户外舞台');
+  await assertText(region('必须满足'), '室内演出');
+  await click(page, '下一步：进入场景选配');
+  await assertText(region('方案对比'), /暂无满足全部硬条件的组合/);
+  assert.equal(await region('方案对比').getByRole('button', { name: '选用此方案' }).count(), 0);
+}
+
+async function verifySpokenOrder() {
+  const text = '公司团装 名单上有十四位 每人配两套西装 颜色定藏青 面料必须是纯羊毛 洗护照旧走专业干洗';
+  await click(page, '新建需求');
+  await chooseProjectBusiness('口述排班订量');
+  await page.getByLabel('客户原话').fill(text);
+  await analyze();
+  await assertText(region('必须满足'), '28 套');
+  await assertText(region('必须满足'), '干洗');
+  await click(page, '下一步：进入场景选配');
+  await click(region('客户改稿'), '保存初版');
+  await openFlowStep('项目档案');
+  const { version } = JSON.parse(await download(region('版本交接'), '下载 JSON', 'spoken-order-V1.json'));
+  const quantity = version.requirement.constraints.find((item) => item.field === 'quantity' && item.level === 'hard');
+  assert.equal(quantity.value, 28);
+  assert.ok(quantity.quote.includes('十四位') && quantity.quote.includes('每人配两套') && text.includes(quantity.quote));
+  assert.ok(version.candidate);
+  return quantity.value;
 }
 
 function assertPendingSnapshot(snapshot, number) {

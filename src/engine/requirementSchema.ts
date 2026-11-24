@@ -1,7 +1,11 @@
 import { CONSTRAINT_FIELDS, REQUIREMENT_SCHEMA_VERSION } from '../types/decisions';
 import type { ClarificationQuestion, Constraint, DecisionRequirement, RequirementTurn } from '../types/decisions';
 import type { DimensionItem, OfficialSpecItem, RequirementInput } from '../types/sartoria';
-import { buildClarificationQuestions, buildLocalDecisionRequirement, constraintsConflict, extractRevisionConstraints, isRequirementValue } from './requirementInterview';
+import {
+  buildClarificationQuestions, buildLocalDecisionRequirement, constraintsConflict, extractRevisionConstraints,
+  isRequirementValue, sameQuantityScope,
+} from './requirementInterview';
+import { namedQuantityScope } from './requirementQuantity';
 
 const PROFESSIONAL_FIELDS = ['category', 'patternStructure', 'collar', 'fabric', 'color', 'motif', 'lengthRatio', 'easeAllowance'] as const satisfies OfficialSpecItem['key'][];
 const DIMENSION_FIELDS = ['styleTone', 'silhouetteReq', 'fabricTexture', 'craftDetail', 'colorSystem', 'sceneFit'] as const satisfies DimensionItem['key'][];
@@ -118,7 +122,7 @@ function sourcedUnknown(item: Constraint, facts: Constraint[]): Constraint | und
   return facts.find((fact) => sameFact(fact, item) && fact.quote !== null && item.quote!.includes(fact.quote));
 }
 
-function validConstraint(item: Constraint, turns: Map<string, RequirementTurn>, facts: Constraint[]): boolean {
+function validConstraint(item: Constraint, turns: Map<string, RequirementTurn>, facts: Constraint[], initialTurnId: string): boolean {
   if (!hasText(item.id) || item.verifiedBy !== null) return false;
   if (item.state === 'unknown') {
     if (item.level !== 'pending' || item.value !== null || item.op !== 'eq' || !hasText(item.reason)) return false;
@@ -131,7 +135,8 @@ function validConstraint(item: Constraint, turns: Map<string, RequirementTurn>, 
   if (item.state !== 'explicit' || item.level === 'pending' || !hasVerbatimQuote(item, turns)) return false;
   return facts.some((fact) => sameFact(fact, item) && fact.quote !== null && item.quote!.includes(fact.quote)) || (
     facts.some((fact) => sameFact(fact, item) && fact.quote?.includes(item.quote!)) &&
-    extractRevisionConstraints({ id: item.sourceTurnId!, text: item.quote! }).some((fact) => sameFact(fact, item))
+    extractRevisionConstraints({ id: item.sourceTurnId!, text: item.quote! }, item.sourceTurnId === initialTurnId ? 'initial' : 'revision')
+      .some((fact) => sameFact(fact, item))
   );
 }
 
@@ -165,26 +170,38 @@ export function parseRequirementResponse(
     return { ok: false, issues: ['原始简报与访问记录不一致。'] };
   }
   const issues: string[] = [];
-  const facts = turns.flatMap(extractRevisionConstraints);
+  const facts = turns.flatMap((turn, index) => extractRevisionConstraints(turn, index === 0 ? 'initial' : 'revision'));
   const pendingFacts = constraints.map((item) => sourcedUnknown(item, facts));
   const normalized = constraints.map((item, index) => {
     const fact = pendingFacts[index];
-    return fact ? { ...item, reason: fact.reason, blocking: fact.blocking, withdraws: fact.withdraws } : item;
+    if (fact) return { ...item, reason: fact.reason, blocking: fact.blocking, withdraws: fact.withdraws };
+    if (item.field === 'quantity' && item.quote) {
+      const sourced = facts.filter((known) => sameFact(known, item) && known.quote &&
+        (item.quote!.includes(known.quote) || known.quote.includes(item.quote!)));
+      const scopes = new Set(sourced.map(({ quantityScope }) => quantityScope));
+      const statedScope = namedQuantityScope(item.quote);
+      if (scopes.size > 1 && (!statedScope || !scopes.has(statedScope))) {
+        issues.push('数量原话同时涉及整单及本批，须分别提供明确范围的引文。');
+      }
+      const scope = scopes.size === 1 ? scopes.values().next().value : statedScope;
+      if (scope) return { ...item, quantityScope: scope };
+    }
+    return item;
   });
   const blockedFields = new Set(normalized.filter((item) => item.blocking).map(({ field }) => field));
   if (!PROFESSIONAL_FIELDS.every((field) => constraints.some((item) => item.field === field))) issues.push('八项专业字段必须逐项给出。');
   if (new Set(constraints.map(({ id }) => id)).size !== constraints.length) issues.push('约束 ID 重复。');
-  for (const [index, constraint] of constraints.entries()) {
-    if (!validConstraint(constraint, sourceTurns, facts)) issues.push(`${constraint.field} 的值、状态或原话无法核实。`);
-    const others = constraints.slice(index + 1).filter((item) => item.field === constraint.field);
+  for (const [index, constraint] of normalized.entries()) {
+    if (!validConstraint(constraint, sourceTurns, facts, turns[0].id)) issues.push(`${constraint.field} 的值、状态或原话无法核实。`);
+    const others = normalized.slice(index + 1).filter((item) => item.field === constraint.field);
     if (!blockedFields.has(constraint.field) && others.some((item) => constraintsConflict(constraint, item))) issues.push(`${constraint.field} 含互相冲突的硬约束。`);
     const unsourcedUnknown = (item: Constraint) => item.state === 'unknown' && item.sourceTurnId === null;
     if (others.some((item) => unsourcedUnknown(item) || unsourcedUnknown(constraint))) issues.push(`${constraint.field} 同时含无出处的未决项与其他状态。`);
-    if (others.some((item) => sameFact(constraint, item))) issues.push(`${constraint.field} 含重复约束。`);
+    if (others.some((item) => sameFact(constraint, item) && sameQuantityScope(constraint, item))) issues.push(`${constraint.field} 含重复约束。`);
   }
   // Keep all locally verified statements and require a quoted pending item when the source conflicts.
   for (const fact of facts) {
-    if (!constraints.some((item) => sameFact(fact, item))) {
+    if (!normalized.some((item) => sameFact(fact, item) && sameQuantityScope(fact, item))) {
       issues.push(`${fact.field} 遗漏了原话中的明确或待确认项。`);
     }
   }

@@ -215,9 +215,9 @@ function ChangeTable({ changes }: { changes: ConstraintChange[] }) {
 
 function BranchCard({ branch, version, onConfirm }: { branch: RevisionBranch; version: Version; onConfirm: (option: RevisionOption) => void }) {
   const isDeferred = branch.option === 'defer';
-  const changedFields = new Set(branch.changes.map(({ field }) => field));
+  const previousHardIds = new Set(version.requirement.constraints.filter((item) => item.level === 'hard').map((item) => item.id));
   const carryForward = branch.requirement.constraints.filter((item) =>
-    item.level === 'hard' && !changedFields.has(item.field),
+    item.level === 'hard' && previousHardIds.has(item.id),
   );
   return (
     <article className="decision-candidate">
@@ -288,7 +288,9 @@ export function RevisionWorkspace({
               </div>
               <CandidateMaterial candidate={version.candidate} />
               {preview.requestedPatch.length ? <ChangeTable changes={preview.requestedPatch} /> : (
-                <p className="decision-alert">暂时没有可执行的字段变更。请补充具体要修改的内容。</p>
+                <p className="decision-caption">{preview.branches.some((branch) => branch.changes.length > 0)
+                  ? '此次反馈补充了待确认事项，可核对原话后保存。'
+                  : '本次反馈尚未提取到可确认的变更。'}</p>
               )}
               {preview.conflicts.length > 0 && (
                 <div className="decision-alert" role="status">

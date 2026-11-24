@@ -1,5 +1,8 @@
 import { PRESET_DEMO_CASES } from '../data/presetDemos';
 import { SCENES } from '../data/scenes';
+import type { Constraint } from '../types/decisions';
+import { buildColorSpec } from './colorPresentation';
+import { extractRevisionConstraints } from './requirementInterview';
 import type {
   DeconstructErrorInfo,
   DeconstructedRequirement,
@@ -29,8 +32,7 @@ function hasAny(text: string, words: string[]): boolean {
 function buildFallbackThreeBuckets(
   input: RequirementInput,
   officialSpecs: OfficialSpecItem[],
-  bodyErgonomics: string[],
-  colorSpecifiedByUser: boolean
+  bodyErgonomics: string[]
 ): ThreeBucketBreakdown {
   const userExplicit: string[] = [];
   const systemSuggested: string[] = [];
@@ -50,9 +52,6 @@ function buildFallbackThreeBuckets(
   if (bodyErgonomics.length > 0) {
     userExplicit.push(`体态与穿着痛点线索：${bodyErgonomics.join('；')}`);
   }
-  if (!colorSpecifiedByUser) {
-    userExplicit.push('色彩状态：客户原话未指定具体颜色（系统不代客决定色彩）');
-  }
   if (input.rawNarrative.trim()) {
     userExplicit.unshift(`原始需求摘录：「${input.rawNarrative.trim().slice(0, 68)}${input.rawNarrative.trim().length > 68 ? '…' : ''}」`);
   }
@@ -69,7 +68,7 @@ function buildFallbackThreeBuckets(
   };
 }
 
-export function buildOfficialEightSpecs(input: RequirementInput): {
+export function buildOfficialEightSpecs(input: RequirementInput, constraints?: readonly Constraint[]): {
   officialSpecs: OfficialSpecItem[];
   bodyErgonomics: string[];
   threeBuckets: ThreeBucketBreakdown;
@@ -85,7 +84,7 @@ export function buildOfficialEightSpecs(input: RequirementInput): {
       const colorSpecifiedByUser = preset.colorSpecifiedByUser ?? false;
       const threeBuckets =
         preset.threeBucketsOverride ??
-        buildFallbackThreeBuckets(input, preset.officialSpecOverride, cues, colorSpecifiedByUser);
+        buildFallbackThreeBuckets(input, preset.officialSpecOverride, cues);
       return {
         officialSpecs: preset.officialSpecOverride,
         bodyErgonomics: cues,
@@ -117,31 +116,6 @@ export function buildOfficialEightSpecs(input: RequirementInput): {
   const slopedShoulder = hasAny(text, ['溜肩', '窄肩']);
   const needLayering = hasAny(text, ['内搭', '叠穿', '里面穿']);
   const needArmLift = hasAny(text, ['抬手', '演奏', '坐奏', '活动方便', '舒展', '不卡手臂', '不要束缚']);
-
-  const colorSpecifiedByUser = hasAny(text, [
-    '明快',
-    '活力',
-    '亮粉',
-    '米白',
-    '藏青',
-    '暖灰',
-    '松墨绿',
-    '墨黑',
-    '黑金',
-    '深色',
-    '月白',
-    '浅色',
-    '清冷',
-    '酒红',
-    '绯红',
-    '撞色',
-    '黑色',
-    '白色',
-    '蓝色',
-    '红色',
-    '灰色',
-    '绿色',
-  ]);
 
   const bodyErgonomics: string[] = [];
   if (broadBackOrTall) bodyErgonomics.push('高个宽厚肩背 → 微落平肩 + 肩背/袖笼方向放量，不压肩不卡臂');
@@ -204,29 +178,14 @@ export function buildOfficialEightSpecs(input: RequirementInput): {
     fabric = '香云纱面料，自带自然肌理，哑光温润，挺而不硬，垂感柔和';
   } else if (hasAny(text, ['梅花', '宋锦', '暗纹'])) {
     fabric = '优选垂感适中、手感柔和的提花宋锦面料，垂感顺滑，自带柔和光泽，挺而不硬';
-  } else if (hasAny(text, ['丝绒', '酒红', '绯红'])) {
+  } else if (text.includes('丝绒')) {
     fabric = '非遗香云纱真丝丝绒，深邃微光垂坠显贵';
   }
 
-  // 5. 色彩（关键原则：用户没指定颜色时绝不代客确定！）
-  let color = '无特殊需求（客户未指定颜色，系统不代客决定，待线下实物色卡核定）';
-  let colorProvenance: OfficialSpecItem['provenance'] = 'needs_human_verification';
-  if (isTwoPieceStage || hasAny(text, ['明快', '活力', '亮粉', '米白'])) {
-    color = '米白底色外套，搭配亮粉色滚边与撞色袖口；连衣裙同亮粉色（具体明度色号待线下核色）';
-    colorProvenance = 'system_suggested';
-  } else if (hasAny(text, ['藏青', '暖灰', '松墨绿'])) {
-    color = '主推外滩午夜藏青，同步备选石库门建筑暖灰 / 申城松墨绿';
-    colorProvenance = 'user_explicit';
-  } else if (hasAny(text, ['墨黑', '黑金', '深色'])) {
-    color = '深邃墨黛黑底配低饱和古金暗纹（待工坊米样核色）';
-    colorProvenance = 'user_explicit';
-  } else if (hasAny(text, ['月白', '浅色', '清冷'])) {
-    color = '月白烟青浅色系（待工坊米样核色）';
-    colorProvenance = 'user_explicit';
-  } else if (colorSpecifiedByUser) {
-    color = '按客户口述色彩倾向匹配备选色卡，最终以线下实物米样核色为准';
-    colorProvenance = 'user_explicit';
-  }
+  // Use the same sourced color decisions for the offline summary and catalog filtering.
+  const observations = constraints ?? extractRevisionConstraints({ id: 'brief-1', text: input.rawNarrative }, 'initial');
+  const colorSpec = buildColorSpec(observations);
+  const colorSpecifiedByUser = colorSpec.provenance === 'user_explicit';
 
   // 6. 装饰纹样
   let motif = '无特殊需求（待顾问核实是否保留素面或小巧暗花）';
@@ -321,13 +280,7 @@ export function buildOfficialEightSpecs(input: RequirementInput): {
       sourceNote: '匹配静态模拟面料库（须线下核验米样手感）',
     },
     {
-      key: 'color',
-      label: '色彩',
-      value: color,
-      provenance: colorProvenance,
-      sourceNote: colorSpecifiedByUser
-        ? '参考客户色彩描述，须线下米样核色'
-        : '客户未指定颜色，系统不代客决定',
+      ...colorSpec,
       ergonomicCue: !colorSpecifiedByUser ? '待线下核色' : isTwoPieceStage ? '明快上镜' : undefined,
     },
     {
@@ -364,19 +317,18 @@ export function buildOfficialEightSpecs(input: RequirementInput): {
   const threeBuckets = buildFallbackThreeBuckets(
     input,
     officialSpecs,
-    bodyErgonomics,
-    colorSpecifiedByUser
+    bodyErgonomics
   );
 
   return { officialSpecs, bodyErgonomics, threeBuckets, colorSpecifiedByUser };
 }
 
-export function deconstructLocally(input: RequirementInput): DeconstructedRequirement {
+export function deconstructLocally(input: RequirementInput, constraints?: readonly Constraint[]): DeconstructedRequirement {
   const text = `${input.projectName} ${input.clientName} ${input.rawNarrative}`.toLowerCase();
   const scene = SCENES.find((s) => s.id === input.targetSceneId) ?? SCENES[0];
   const isUniform = input.businessType === 'corporate_uniform';
   const { officialSpecs, bodyErgonomics, threeBuckets, colorSpecifiedByUser } =
-    buildOfficialEightSpecs(input);
+    buildOfficialEightSpecs(input, constraints);
 
   const emotionTags = new Set<string>();
   const extractedKeywords = new Set<string>();
@@ -446,7 +398,7 @@ export function deconstructLocally(input: RequirementInput): DeconstructedRequir
       value: specByKey('color'),
       detail: colorSpecifiedByUser
         ? `适配 ${scene.lighting.colorTempLabel}，实物色泽以工坊米样核色为准。`
-        : '客户未指定颜色，系统不代客定色，留待顾问线下核对实物色卡。',
+        : '成衣用色待顾问与客户核对实物色卡。',
       score: colorSpecifiedByUser ? 92 : 85,
     },
     {
@@ -472,7 +424,7 @@ export function deconstructLocally(input: RequirementInput): DeconstructedRequir
 
   const targetAudienceInsight =
     bodyErgonomics.length > 0
-      ? `已自动识别体态与动作诉求：${bodyErgonomics.join('；')}。${colorSpecifiedByUser ? '' : '（色彩未指定，待人工核色）'}`
+      ? `已自动识别体态与动作诉求：${bodyErgonomics.join('；')}。${colorSpecifiedByUser ? '' : '（成衣用色待核）'}`
       : `面向「${input.clientName || '定制客户'}」，聚焦「${Array.from(emotionTags).slice(0, 3).join('、')}」核心情绪诉求。`;
 
   return {

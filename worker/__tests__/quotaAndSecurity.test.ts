@@ -9,7 +9,9 @@ import {
 } from '../pricing.ts';
 import { QuotaLedgerCore, type SqlExecutorLike } from '../quotaCore.ts';
 import {
+  OFFICIAL_SPEC_KEYS,
   REQUIREMENT_SCHEMA_VERSION,
+  SARTORIA_SYSTEM_PROMPT,
   validateStructuredRequirement,
 } from '../schema.ts';
 import { resolveVisitorIdentity } from '../visitorAuth.ts';
@@ -29,6 +31,85 @@ function createMemorySqlExecutor(): SqlExecutorLike {
     },
   };
 }
+
+describe('Worker extraction prompt', () => {
+  it('keeps a sheen exclusion distinct from a positive finish in the model headline', () => {
+    const titleRule = SARTORIA_SYSTEM_PROMPT.split('\n').find(line => line.includes('aestheticArchetype 标题'));
+    expect(titleRule).toContain('仅排除强反光时，中等光泽仍可用');
+    expect(titleRule).toContain('只有客户明确选择低光泽或哑光时才用相应词语命名');
+  });
+
+  it('requires explicit garment quantities, named venues, and group commissions in the extracted facts', () => {
+    expect(SARTORIA_SYSTEM_PROMPT).toMatch(/threeBuckets\.userExplicit[^\n]+成衣数量、具名场地和委托性质/);
+    expect(SARTORIA_SYSTEM_PROMPT).toContain('包括一件、一套与多件多套');
+    expect(SARTORIA_SYSTEM_PROMPT).toMatch(/category\.value[^\n]+不能只留在 sourceQuote/);
+    expect(SARTORIA_SYSTEM_PROMPT).toContain('完整场地或活动名称');
+    expect(SARTORIA_SYSTEM_PROMPT).toContain('团体委托及原文所指的委托方或团队');
+  });
+
+  it('distinguishes supported quantities and treats uncertainty separately across the response', () => {
+    expect(SARTORIA_SYSTEM_PROMPT).toMatch(/套内单品的件数只描述结构[^\n]+needsHumanVerification[^\n]+订单总套数待确认/);
+    expect(SARTORIA_SYSTEM_PROMPT).toContain('在所有字段区分成衣件数、套数、穿着人数和每人配额');
+    expect(SARTORIA_SYSTEM_PROMPT).toContain('成衣件套数不能推作人数或每人配额');
+    expect(SARTORIA_SYSTEM_PROMPT).toContain('明确事实只取自客户需求原文');
+    expect(SARTORIA_SYSTEM_PROMPT).toMatch(/尚未确定[^\n]+needsHumanVerification/);
+  });
+
+  it('grounds group commissions in actual ordering roles and distinguishes private or family orders', () => {
+    expect(SARTORIA_SYSTEM_PROMPT).toMatch(/采购与门店管理人员[^\n]+团体委托[^\n]+决策角色作为依据/);
+    expect(SARTORIA_SYSTEM_PROMPT).toMatch(/代家人亲友下单[^\n]+个人委托/);
+    expect(SARTORIA_SYSTEM_PROMPT).toContain('未说出的机构名称和穿着团队不得补写');
+  });
+
+  it('preserves a confirmed batch quantity while leaving the cumulative quantity open', () => {
+    expect(SARTORIA_SYSTEM_PROMPT).toMatch(/首批、本批或试点范围[^\n]+保留该范围及数量[^\n]+累计总量待确认/);
+    expect(SARTORIA_SYSTEM_PROMPT).toMatch(/“先”直接限定成衣订做数量[^\n]+没有“批”字[^\n]+当前批次的已定数量/);
+    expect(SARTORIA_SYSTEM_PROMPT).toMatch(/流程顺序的“先”[^\n]+不构成分批依据/);
+    expect(SARTORIA_SYSTEM_PROMPT).toMatch(/原文未给单位[^\n]+不擅加“件”或“套”/);
+  });
+
+  it('requires a named verification item for each relevant missing requirement beyond the follow-up budget', () => {
+    const checklist = SARTORIA_SYSTEM_PROMPT.split('\n').find((line) => line.includes('threeBuckets.needsHumanVerification 是待办清单'));
+    expect(checklist).toMatch(/未入选 0–2 条追问[^\n]+逐项检查/);
+    for (const field of ['成衣数量', '穿着场地', '洗护方式', '具体成衣品类', '面料成分', '穿着季节']) {
+      expect(checklist).toContain(field);
+    }
+    expect(checklist).toContain('岗位与决策角色不能确认穿着场地');
+    expect(checklist).toContain('仅说明用途，不能确认具体品类');
+    expect(checklist).toContain('低光泽等性能不能确认面料成分');
+    expect(checklist).toContain('表单季候不能确认穿着季节');
+    expect(checklist).toContain('在待办清单正文用对应字段名写明“待确认”');
+  });
+
+  it('retains all eight model verification entries and safety boundaries within eight returned lines', () => {
+    const pending = [
+      '累计总量待确认', '使用场地待确认', '洗护方式待确认', '具体成衣品类待确认',
+      '面料成分待确认', '穿着季节待确认', '领型待确认', '长度比例待确认',
+    ];
+    const questions = ['穿着场地在哪里？', '需要哪一类成衣？', '洗护有要求吗？'];
+    const result = validateStructuredRequirement({
+      schemaVersion: REQUIREMENT_SCHEMA_VERSION,
+      aestheticArchetype: '通勤工装',
+      emotionTags: ['利落', '耐用', '简洁'],
+      colorSpecifiedByUser: false,
+      bodyErgonomics: [],
+      followUpQuestions: questions,
+      officialSpecs: OFFICIAL_SPEC_KEYS.map((key) => ({
+        key, value: '待确认', infoStatus: 'unknown', constraintKind: 'pending', sourceQuote: null,
+      })),
+      threeBuckets: { userExplicit: [], systemSuggested: [], needsHumanVerification: pending },
+    }, '想订一批员工工作服。');
+
+    if (!result.ok) throw new Error(result.reason);
+    expect(result.data.followUpQuestions).toEqual(questions.slice(0, 2));
+    const verification = result.data.threeBuckets.needsHumanVerification;
+    expect(verification).toHaveLength(8);
+    const verificationText = verification.join('\n');
+    expect(verificationText).toContain('色彩确认');
+    expect(verificationText).toContain('精确净体尺寸与松量厘米数');
+    for (const entry of pending) expect(verificationText).toContain(entry);
+  });
+});
 
 describe('YOU-246 & YOU-247: Pricing, Quota Ledger, Concurrency, Signed Cookies & Schema Guardrails', () => {
   it('computes exact gpt-6.2-astra standard & cached token costs in micro-dollars', () => {

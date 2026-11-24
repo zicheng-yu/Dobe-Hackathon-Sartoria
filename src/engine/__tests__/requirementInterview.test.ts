@@ -16,7 +16,7 @@ function makeModelResponse(input: RequirementInput) {
   const unknown = { value: null, state: 'unknown', level: 'pending', sourceTurnId: null, quote: null, reason: '原话未提及' };
   const dimension = { ...unknown, score: null };
   return {
-    schemaVersion, constraints: constraints.map(({ blocking: _blocking, withdraws: _withdraws, ...constraint }) => constraint), questions,
+    schemaVersion, constraints: constraints.map(({ blocking: _blocking, withdraws: _withdraws, quantityScope: _quantityScope, ...constraint }) => constraint), questions,
     dimensions: {
       styleTone: dimension, silhouetteReq: dimension, fabricTexture: dimension,
       craftDetail: dimension, colorSystem: dimension, sceneFit: dimension,
@@ -348,6 +348,32 @@ describe('the strict requirement response boundary', () => {
   it('accepts a complete, versioned and semantically supported payload', () => {
     const response = makeModelResponse(mainBrief);
     expect(parseRequirementResponse(JSON.stringify(response), mainBrief)).toMatchObject({ ok: true, requirement: { mode: 'validated' } });
+  });
+
+  it('restores the order scope from source when validating model quantities', () => {
+    const input = { ...corporateContext, rawNarrative: '整单二十六套西装。首批先做二十套。' };
+    expect(parseRequirementResponse(makeModelResponse(input), input)).toMatchObject({
+      ok: true, requirement: { constraints: expect.arrayContaining([
+        expect.objectContaining({ field: 'quantity', value: 26, quantityScope: 'order' }),
+        expect.objectContaining({ field: 'quantity', value: 20, quantityScope: 'batch' }),
+      ]) },
+    });
+  });
+
+  it('requires individually scoped evidence when equal counts cover both an order and a batch', () => {
+    const input = { ...corporateContext, rawNarrative: '整单二十六套首批二十六套。' };
+    const response = makeModelResponse(input);
+    const amounts = response.constraints.filter(({ field }) => field === 'quantity');
+    expect(amounts).toHaveLength(2);
+    expect(parseRequirementResponse(response, input)).toMatchObject({ ok: false });
+    amounts[0].quote = '整单二十六套';
+    amounts[1].quote = '首批二十六套';
+    expect(parseRequirementResponse(response, input)).toMatchObject({
+      ok: true, requirement: { constraints: expect.arrayContaining([
+        expect.objectContaining({ field: 'quantity', value: 26, quantityScope: 'order' }),
+        expect.objectContaining({ field: 'quantity', value: 26, quantityScope: 'batch' }),
+      ]) },
+    });
   });
 
   it('recovers from malformed JSON or a response outside the schema', () => {

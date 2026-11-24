@@ -2,6 +2,7 @@ import { CRAFTS } from '../data/crafts';
 import { FABRICS } from '../data/fabrics';
 import { PATTERNS } from '../data/patterns';
 import { SCENES } from '../data/scenes';
+import { colorReviewText } from './colorPresentation';
 import type {
   ConfigurationState,
   DeconstructedRequirement,
@@ -94,12 +95,13 @@ export function generateVisualPromptPack(
   const crafts = CRAFTS.filter((c) => config.craftIds.includes(c.id));
 
   const colorSpecified = deconstructed.colorSpecifiedByUser;
+  const colorReview = colorReviewText(deconstructed);
   const colorEn = colorSpecified
     ? (COLOR_EN[fabric.colorFamily] ?? 'refined neutral bespoke textile tone')
     : 'undecided fabric color (tonal placeholder for visual structure only)';
   const colorCn = colorSpecified
     ? fabric.colorName
-    : '中性深调素雅示意色（客户未指定色彩，仅作结构与肌理预览，不代表最终定色）';
+    : '中性深调素雅示意色（仅作结构与肌理预览，最终成衣色待核）';
 
   const weaveEn = WEAVE_EN[fabric.weave] ?? 'fine luxury woven textile';
   const sheenEn = fabric.luster.includes('哑光') ? 'matte finish' :
@@ -154,14 +156,14 @@ export function generateVisualPromptPack(
 
   const colorDisclaimer = colorSpecified
     ? `客户已表达色彩倾向，提示词参考「${fabric.colorName}」；实物最终显色仍须以工坊高显色光源下米样核色为准。`
-    : '客户未指定颜色：为严格遵守「不代客定色」边界，以下提示词仅用中性暗纹色调做廓形与质感示意，不代表锁定颜色，须待线下实物色卡确认。';
+    : `${colorReview ?? '客户未指定颜色'}。提示词以中性色调预览廓形与质感，最终成衣色须按实物色卡确认。`;
 
   return {
     packTitle: `${input.projectName || pattern.name} · 视觉需求与绘图提示词包`,
     generatedAt: new Date().toISOString(),
     paletteSummary: colorSpecified
       ? `${fabric.colorName}（${fabric.pbr.baseColor}）× 光泽（${fabric.pbr.sheenColor}）｜${scene.lighting.colorTempLabel}`
-      : `色彩未指定（暂用中性示意色 ${fabric.pbr.baseColor}，待线下色卡核定）｜${scene.lighting.colorTempLabel}`,
+      : `${colorReview ? '成衣颜色待核' : '色彩未指定'}（暂用中性示意色 ${fabric.pbr.baseColor}，待线下色卡核定）｜${scene.lighting.colorTempLabel}`,
     colorDisclaimer,
     mustPreserveConstraints,
     apiBoundaryNote:

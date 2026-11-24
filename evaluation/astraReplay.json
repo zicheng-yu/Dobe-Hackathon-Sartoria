@@ -1,0 +1,903 @@
+{
+  "model": "gpt-6.2-astra",
+  "effort": "low",
+  "systemPromptSha256": "44346fbb03ea681c1f9163d855140a19ede3a22f87ac5f64de727d5bde9a743f",
+  "cases": [
+    {
+      "id": "01",
+      "input": {
+        "businessType": "private_couture",
+        "rawNarrative": "我个人订一套两件式演出服，就给这一场穿。主办方交代，这个舞台必须是户外的，也必须是室内的。颜色得等灯光组定。",
+        "season": "autumn",
+        "projectName": "",
+        "targetSceneId": "scene-studio-minimal",
+        "clientName": "",
+        "groupSize": ""
+      },
+      "userPromptSha256": "551dba831990dbed5fdee62c344abd2776a130a5f7658beb37fbe69d6a21b268",
+      "output": {
+        "schemaVersion": "sartoria_requirement_v1",
+        "aestheticArchetype": "单场舞台演出",
+        "emotionTags": [
+          "舞台感",
+          "鲜明",
+          "利落"
+        ],
+        "colorSpecifiedByUser": false,
+        "bodyErgonomics": [
+          "两件衔接处需随舞台动作试身"
+        ],
+        "followUpQuestions": [
+          "同一场演出的舞台同时被要求设在户外和室内，请主办方确认实际场地，是否涉及分段转场？",
+          "灯光组会在什么灯光条件下确认色卡？"
+        ],
+        "officialSpecs": [
+          {
+            "key": "category",
+            "label": "品类",
+            "value": "个人两件式演出服",
+            "infoStatus": "explicit",
+            "constraintKind": "hard",
+            "sourceQuote": "我个人订一套两件式演出服",
+            "rationale": "单场个人演出用装。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "patternStructure",
+            "label": "版型结构",
+            "value": "两件式",
+            "infoStatus": "explicit",
+            "constraintKind": "hard",
+            "sourceQuote": "两件式演出服",
+            "rationale": "客户已指定件数与组合形式。",
+            "ergonomicCue": "动作时检查两件之间的覆盖。"
+          },
+          {
+            "key": "collar",
+            "label": "领型",
+            "value": "待明确",
+            "infoStatus": "unknown",
+            "constraintKind": "pending",
+            "sourceQuote": null,
+            "rationale": "演出造型未说明领口要求。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "fabric",
+            "label": "面料",
+            "value": "待主办方厘清场地后选样",
+            "infoStatus": "unknown",
+            "constraintKind": "pending",
+            "sourceQuote": null,
+            "rationale": "室内与户外的场地要求相互冲突，影响防风、透气等性能取舍。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "color",
+            "label": "色彩",
+            "value": "无特殊需求（客户未指定颜色，系统不代客决定，须由顾问携实物色卡线下核定）",
+            "infoStatus": "unknown",
+            "constraintKind": "pending",
+            "sourceQuote": null,
+            "rationale": "灯光组尚未定色。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "motif",
+            "label": "装饰纹样",
+            "value": "待讨论",
+            "infoStatus": "unknown",
+            "constraintKind": "pending",
+            "sourceQuote": null,
+            "rationale": "尚无剧目或纹样要求。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "lengthRatio",
+            "label": "长度比例",
+            "value": "按演出动作试定两件比例",
+            "infoStatus": "suggested",
+            "constraintKind": "soft",
+            "sourceQuote": null,
+            "rationale": "搭接位置影响动作中造型的连贯性。",
+            "ergonomicCue": "抬臂、转身试穿。"
+          },
+          {
+            "key": "easeAllowance",
+            "label": "松弛余量",
+            "value": "肩背、袖笼及下装活动量待量体试身",
+            "infoStatus": "unknown",
+            "constraintKind": "pending",
+            "sourceQuote": null,
+            "rationale": "由版师根据动作幅度核定。",
+            "ergonomicCue": "用实际表演动作试身。"
+          }
+        ],
+        "threeBuckets": {
+          "userExplicit": [
+            "个人单场穿用的一套两件式演出服",
+            "主办方同时要求同一舞台必须在户外、也必须在室内",
+            "颜色等灯光组决定"
+          ],
+          "systemSuggested": [
+            "结合表演动作检查两件衔接比例"
+          ],
+          "needsHumanVerification": [
+            "主办方澄清场地矛盾",
+            "灯光组确认实物颜色",
+            "面料、领型、纹样与实穿放量"
+          ]
+        }
+      }
+    },
+    {
+      "id": "02",
+      "input": {
+        "businessType": "corporate_uniform",
+        "rawNarrative": "陆家嘴金融峰会用，公司团订三十套西装，走现代商务风。一定得能机洗，不能要求干洗。藏青先拿来看看，颜色还得等老板定。布别选亮面的。",
+        "season": "autumn",
+        "projectName": "",
+        "targetSceneId": "scene-studio-minimal",
+        "clientName": "",
+        "groupSize": ""
+      },
+      "userPromptSha256": "0406d6aa1b392261c26a967aece6893b1241b0898de435a3521eb8fecb848620",
+      "output": {
+        "schemaVersion": "sartoria_requirement_v1",
+        "aestheticArchetype": "现代商务峰会西装",
+        "emotionTags": [
+          "专业",
+          "沉稳",
+          "简洁",
+          "利落"
+        ],
+        "colorSpecifiedByUser": true,
+        "bodyErgonomics": [
+          "团体分码兼顾坐姿与握手时肩背活动"
+        ],
+        "followUpQuestions": [
+          "是否先提供藏青实物布样供老板确认？",
+          "三十套西装如何分码，能否安排代表体型试穿？"
+        ],
+        "officialSpecs": [
+          {
+            "key": "category",
+            "label": "品类",
+            "value": "三十套团体商务西装",
+            "infoStatus": "explicit",
+            "constraintKind": "hard",
+            "sourceQuote": "公司团订三十套西装",
+            "rationale": "用于陆家嘴金融峰会。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "patternStructure",
+            "label": "版型结构",
+            "value": "建议自然肩、适度收腰的现代商务轮廓",
+            "infoStatus": "suggested",
+            "constraintKind": "soft",
+            "sourceQuote": null,
+            "rationale": "自然肩线便于不同体型维持整洁外观。",
+            "ergonomicCue": "坐姿检查腰腹与后背。"
+          },
+          {
+            "key": "collar",
+            "label": "领型",
+            "value": "建议平驳领",
+            "infoStatus": "suggested",
+            "constraintKind": "soft",
+            "sourceQuote": null,
+            "rationale": "适合正式会议与商务衬衫搭配。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "fabric",
+            "label": "面料",
+            "value": "成衣必须可机洗，不接受必须干洗或亮面面料",
+            "infoStatus": "explicit",
+            "constraintKind": "hard",
+            "sourceQuote": "一定得能机洗，不能要求干洗。藏青先拿来看看，颜色还得等老板定。布别选亮面的。",
+            "rationale": "筛样同时考虑护理方式和表面光泽，并核验辅料耐洗性。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "color",
+            "label": "色彩",
+            "value": "藏青仅供看样，待老板定色",
+            "infoStatus": "explicit",
+            "constraintKind": "soft",
+            "sourceQuote": "藏青先拿来看看，颜色还得等老板定",
+            "rationale": "明确了候选色及审批人。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "motif",
+            "label": "装饰纹样",
+            "value": "建议素面",
+            "infoStatus": "suggested",
+            "constraintKind": "soft",
+            "sourceQuote": null,
+            "rationale": "简洁表面便于团体造型统一。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "lengthRatio",
+            "label": "长度比例",
+            "value": "建议常规商务衣长",
+            "infoStatus": "suggested",
+            "constraintKind": "soft",
+            "sourceQuote": null,
+            "rationale": "结合身高分档调整上下装比例。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "easeAllowance",
+            "label": "松弛余量",
+            "value": "肩背、袖笼与腰腹适当留量，待版师量体试身核定",
+            "infoStatus": "unknown",
+            "constraintKind": "pending",
+            "sourceQuote": null,
+            "rationale": "不同体型坐立和抬手时所需余量有别。",
+            "ergonomicCue": "模拟落座与握手。"
+          }
+        ],
+        "threeBuckets": {
+          "userExplicit": [
+            "陆家嘴金融峰会，三十套现代商务西装",
+            "必须可机洗，不得要求干洗，排除亮面",
+            "藏青先看样，老板决定颜色"
+          ],
+          "systemSuggested": [
+            "自然肩与适度收腰、平驳领",
+            "素面与常规商务衣长"
+          ],
+          "needsHumanVerification": [
+            "老板审定实物色卡",
+            "成衣及辅料机洗表现",
+            "团体分码、试穿与最终放量"
+          ]
+        }
+      }
+    },
+    {
+      "id": "03",
+      "input": {
+        "businessType": "private_couture",
+        "rawNarrative": "个人订做一件新中式外套。店里拿过立领和西装驳领给我试，那两个都别做。面料用真丝，别挑反光特别强的那种。颜色我再想想。",
+        "season": "autumn",
+        "projectName": "",
+        "targetSceneId": "scene-studio-minimal",
+        "clientName": "",
+        "groupSize": ""
+      },
+      "userPromptSha256": "22522e9a64586e88555099870e452470e1ee72c903b0dc1a5708cbf7afb3d9dd",
+      "output": {
+        "schemaVersion": "sartoria_requirement_v1",
+        "aestheticArchetype": "含蓄的新中式真丝外套",
+        "emotionTags": [
+          "温润",
+          "雅致",
+          "含蓄"
+        ],
+        "colorSpecifiedByUser": false,
+        "bodyErgonomics": [
+          "按秋季内搭厚度检查肩背和袖笼"
+        ],
+        "followUpQuestions": [
+          "排除立领与西装驳领后，是否愿意试穿无领圆口样衣？",
+          "可否在穿着场景的光线下比较几块低光泽真丝布样？"
+        ],
+        "officialSpecs": [
+          {
+            "key": "category",
+            "label": "品类",
+            "value": "个人定制新中式外套",
+            "infoStatus": "explicit",
+            "constraintKind": "hard",
+            "sourceQuote": "个人订做一件新中式外套",
+            "rationale": "客户明确了外套的品类和风格。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "patternStructure",
+            "label": "版型结构",
+            "value": "建议采用简洁的直身廓形",
+            "infoStatus": "suggested",
+            "constraintKind": "soft",
+            "sourceQuote": null,
+            "rationale": "顺应真丝垂感，方便与内搭组合。",
+            "ergonomicCue": "内搭后检查侧缝垂直度。"
+          },
+          {
+            "key": "collar",
+            "label": "领型",
+            "value": "排除立领和西装驳领；具体替代领型待试",
+            "infoStatus": "explicit",
+            "constraintKind": "excluded",
+            "sourceQuote": "店里拿过立领和西装驳领给我试，那两个都别做",
+            "rationale": "客户明确排除了试过的两种领型。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "fabric",
+            "label": "面料",
+            "value": "真丝，排除反光特别强的品种",
+            "infoStatus": "explicit",
+            "constraintKind": "hard",
+            "sourceQuote": "面料用真丝，别挑反光特别强的那种",
+            "rationale": "材料成分和可接受的光泽均有明确要求。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "color",
+            "label": "色彩",
+            "value": "无特殊需求（客户未指定颜色，系统不代客决定，须由顾问携实物色卡线下核定）",
+            "infoStatus": "unknown",
+            "constraintKind": "pending",
+            "sourceQuote": null,
+            "rationale": "客户仍在考虑颜色。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "motif",
+            "label": "装饰纹样",
+            "value": "建议以素面呈现真丝肌理",
+            "infoStatus": "suggested",
+            "constraintKind": "soft",
+            "sourceQuote": null,
+            "rationale": "能突出面料本身的细腻质感。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "lengthRatio",
+            "label": "长度比例",
+            "value": "待试样比较衣长",
+            "infoStatus": "unknown",
+            "constraintKind": "pending",
+            "sourceQuote": null,
+            "rationale": "未提供内搭长度或衣长偏好。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "easeAllowance",
+            "label": "松弛余量",
+            "value": "肩背及袖笼按内搭分层留量，由版师量体试身核定",
+            "infoStatus": "unknown",
+            "constraintKind": "pending",
+            "sourceQuote": null,
+            "rationale": "须结合抬臂和叠穿效果。",
+            "ergonomicCue": "穿常用内搭向前伸臂。"
+          }
+        ],
+        "threeBuckets": {
+          "userExplicit": [
+            "一件新中式外套",
+            "排除立领和西装驳领",
+            "使用真丝，排除强反光",
+            "颜色尚在考虑"
+          ],
+          "systemSuggested": [
+            "直身廓形与素面真丝",
+            "试无领圆口样衣"
+          ],
+          "needsHumanVerification": [
+            "替代领型、真丝光泽和实物色卡",
+            "身长与叠穿放量"
+          ]
+        }
+      }
+    },
+    {
+      "id": "04",
+      "input": {
+        "businessType": "private_couture",
+        "rawNarrative": "我去听室内音乐会，想给自己做件外套。图片里酒红色很好看，我只借它的领子，照图做方领。衣服颜色先空着，等周五带鞋来配。",
+        "season": "autumn",
+        "projectName": "",
+        "targetSceneId": "scene-studio-minimal",
+        "clientName": "",
+        "groupSize": ""
+      },
+      "userPromptSha256": "584be5a1af3f9387270c49d2146d0d9d55fb8574634f579606ac7c2d1346bb87",
+      "output": {
+        "schemaVersion": "sartoria_requirement_v1",
+        "aestheticArchetype": "室内音乐会方领外套",
+        "emotionTags": [
+          "文雅",
+          "简净",
+          "端庄"
+        ],
+        "colorSpecifiedByUser": false,
+        "bodyErgonomics": [
+          "落座时检查领口贴合与下摆堆叠"
+        ],
+        "followUpQuestions": [
+          "方便提供参考图，并带预计搭配的内搭试方领的开口大小吗？"
+        ],
+        "officialSpecs": [
+          {
+            "key": "category",
+            "label": "品类",
+            "value": "个人音乐会观演外套",
+            "infoStatus": "explicit",
+            "constraintKind": "hard",
+            "sourceQuote": "我去听室内音乐会，想给自己做件外套",
+            "rationale": "用途为室内观演。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "patternStructure",
+            "label": "版型结构",
+            "value": "建议肩线自然、前身简洁",
+            "infoStatus": "suggested",
+            "constraintKind": "soft",
+            "sourceQuote": null,
+            "rationale": "使方领成为视线重点。",
+            "ergonomicCue": "坐姿观察前胸是否牵扯。"
+          },
+          {
+            "key": "collar",
+            "label": "领型",
+            "value": "照参考图制作方领",
+            "infoStatus": "explicit",
+            "constraintKind": "hard",
+            "sourceQuote": "我只借它的领子，照图做方领",
+            "rationale": "借鉴范围限于领部。",
+            "ergonomicCue": "检查方领角点是否平贴。"
+          },
+          {
+            "key": "fabric",
+            "label": "面料",
+            "value": "建议选轻挺、有一定回弹的外套料",
+            "infoStatus": "suggested",
+            "constraintKind": "soft",
+            "sourceQuote": null,
+            "rationale": "有助于支撑方领折角并适应久坐。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "color",
+            "label": "色彩",
+            "value": "无特殊需求（客户未指定颜色，系统不代客决定，须由顾问携实物色卡线下核定）",
+            "infoStatus": "unknown",
+            "constraintKind": "pending",
+            "sourceQuote": null,
+            "rationale": "酒红仅为参考图片色，周五须结合客户带来的鞋子配色。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "motif",
+            "label": "装饰纹样",
+            "value": "待确认",
+            "infoStatus": "unknown",
+            "constraintKind": "pending",
+            "sourceQuote": null,
+            "rationale": "图片仅供领型参考，未提出纹样要求。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "lengthRatio",
+            "label": "长度比例",
+            "value": "建议试坐后选定衣长",
+            "infoStatus": "suggested",
+            "constraintKind": "soft",
+            "sourceQuote": null,
+            "rationale": "室内观演需兼顾落座时的下摆状态。",
+            "ergonomicCue": "测试落座与起身。"
+          },
+          {
+            "key": "easeAllowance",
+            "label": "松弛余量",
+            "value": "按内搭在肩背、袖笼及腰腹方向留量，待量体试身核定",
+            "infoStatus": "unknown",
+            "constraintKind": "pending",
+            "sourceQuote": null,
+            "rationale": "需版师核对坐姿舒适度与方领贴合。",
+            "ergonomicCue": "坐姿自然前伸双臂。"
+          }
+        ],
+        "threeBuckets": {
+          "userExplicit": [
+            "个人室内音乐会观演外套",
+            "参考图只取方领",
+            "颜色暂空，周五带鞋配色"
+          ],
+          "systemSuggested": [
+            "自然肩线与简洁前身",
+            "轻挺有回弹的面料，试坐判断衣长"
+          ],
+          "needsHumanVerification": [
+            "对图核对方领宽深，试身检查贴合",
+            "周五比对鞋与实物色卡",
+            "确认衣长、装饰和活动余量"
+          ]
+        }
+      }
+    },
+    {
+      "id": "05",
+      "input": {
+        "businessType": "corporate_uniform",
+        "rawNarrative": "接待组要换西装。上回清单里的米白和干洗都翻篇了。这单十八套，颜色就定藏青，得能扔洗衣机，亮不亮无所谓。",
+        "season": "autumn",
+        "projectName": "",
+        "targetSceneId": "scene-studio-minimal",
+        "clientName": "",
+        "groupSize": ""
+      },
+      "userPromptSha256": "9f7521f27036530fa16afef9cadff903610b870e689d28330e618def06d7431b",
+      "output": {
+        "schemaVersion": "sartoria_requirement_v1",
+        "aestheticArchetype": "接待组统一职业西装",
+        "emotionTags": [
+          "整洁",
+          "专业",
+          "稳重"
+        ],
+        "colorSpecifiedByUser": true,
+        "bodyErgonomics": [
+          "接待时需兼顾站立、前伸手臂与落座"
+        ],
+        "followUpQuestions": [
+          "十八套的人员尺码分布和常穿内搭是什么？",
+          "日常机洗采用何种程序，以便用完整样衣测试？"
+        ],
+        "officialSpecs": [
+          {
+            "key": "category",
+            "label": "品类",
+            "value": "接待组团体西装，十八套",
+            "infoStatus": "explicit",
+            "constraintKind": "hard",
+            "sourceQuote": "接待组要换西装。上回清单里的米白和干洗都翻篇了。这单十八套",
+            "rationale": "按本单数量安排团体企划。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "patternStructure",
+            "label": "版型结构",
+            "value": "建议肩线整齐、腰身适度合体",
+            "infoStatus": "suggested",
+            "constraintKind": "soft",
+            "sourceQuote": null,
+            "rationale": "兼顾接待组站姿形象和各体型活动。",
+            "ergonomicCue": "检查前伸手臂时的背宽。"
+          },
+          {
+            "key": "collar",
+            "label": "领型",
+            "value": "建议常规平驳领",
+            "infoStatus": "suggested",
+            "constraintKind": "soft",
+            "sourceQuote": null,
+            "rationale": "适合日常接待与衬衫搭配。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "fabric",
+            "label": "面料",
+            "value": "必须可机洗，面料光泽不限",
+            "infoStatus": "explicit",
+            "constraintKind": "hard",
+            "sourceQuote": "得能扔洗衣机，亮不亮无所谓",
+            "rationale": "本单以机洗为前提，旧清单的干洗条件已撤销。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "color",
+            "label": "色彩",
+            "value": "藏青",
+            "infoStatus": "explicit",
+            "constraintKind": "hard",
+            "sourceQuote": "颜色就定藏青",
+            "rationale": "客户明确指定本单颜色。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "motif",
+            "label": "装饰纹样",
+            "value": "建议素面",
+            "infoStatus": "suggested",
+            "constraintKind": "soft",
+            "sourceQuote": null,
+            "rationale": "便于接待组形成统一着装。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "lengthRatio",
+            "label": "长度比例",
+            "value": "建议按身高分档调整常规西装衣长",
+            "infoStatus": "suggested",
+            "constraintKind": "soft",
+            "sourceQuote": null,
+            "rationale": "使不同身高的站姿比例协调。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "easeAllowance",
+            "label": "松弛余量",
+            "value": "肩背、袖笼及腰腹留出接待动作空间，待版师量体试身",
+            "infoStatus": "unknown",
+            "constraintKind": "pending",
+            "sourceQuote": null,
+            "rationale": "需用各尺码代表样确认活动量。",
+            "ergonomicCue": "模拟引导手势和坐下起立。"
+          }
+        ],
+        "threeBuckets": {
+          "userExplicit": [
+            "接待组十八套西装",
+            "本单确定藏青，旧单米白已撤销",
+            "必须可机洗，旧干洗要求已撤销，亮度不限"
+          ],
+          "systemSuggested": [
+            "适度合体、常规平驳领、素面",
+            "按身高分档调整衣长"
+          ],
+          "needsHumanVerification": [
+            "以藏青色样核对批次色差",
+            "成衣机洗后外观和尺寸表现",
+            "十八套分码及接待动作试身"
+          ]
+        }
+      }
+    },
+    {
+      "id": "06",
+      "input": {
+        "businessType": "private_couture",
+        "rawNarrative": "家宴给我做一条连衣裙，颜色我还没选。下摆必须截止膝盖中间，脚踝那条照片只是给你看袖口。别把照片的裙长抄进订单。",
+        "season": "autumn",
+        "projectName": "",
+        "targetSceneId": "scene-studio-minimal",
+        "clientName": "",
+        "groupSize": ""
+      },
+      "userPromptSha256": "3752744398a22d88da79a074b30b020003217ed6d1fecb014a5b6e3252527aa5",
+      "output": {
+        "schemaVersion": "sartoria_requirement_v1",
+        "aestheticArchetype": "家宴及膝连衣裙",
+        "emotionTags": [
+          "亲和",
+          "雅致",
+          "柔和"
+        ],
+        "colorSpecifiedByUser": false,
+        "bodyErgonomics": [
+          "站姿以膝盖中点定位下摆",
+          "落座用餐与起身时检查腰腹和裙摆"
+        ],
+        "followUpQuestions": [
+          "希望借鉴照片中袖口的形状、开合方式，还是装饰细节？"
+        ],
+        "officialSpecs": [
+          {
+            "key": "category",
+            "label": "品类",
+            "value": "家宴连衣裙",
+            "infoStatus": "explicit",
+            "constraintKind": "hard",
+            "sourceQuote": "家宴给我做一条连衣裙",
+            "rationale": "客户已明确使用场景与服装品类。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "patternStructure",
+            "label": "版型结构",
+            "value": "建议轻微A字裙身",
+            "infoStatus": "suggested",
+            "constraintKind": "soft",
+            "sourceQuote": null,
+            "rationale": "及膝长度下适度展开裙摆便于走动与落座。",
+            "ergonomicCue": "坐下时观察裙身牵扯。"
+          },
+          {
+            "key": "collar",
+            "label": "领型",
+            "value": "待选择",
+            "infoStatus": "unknown",
+            "constraintKind": "pending",
+            "sourceQuote": null,
+            "rationale": "未提出领口款式。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "fabric",
+            "label": "面料",
+            "value": "建议柔软且有适度垂感的面料",
+            "infoStatus": "suggested",
+            "constraintKind": "soft",
+            "sourceQuote": null,
+            "rationale": "便于久坐并保持裙摆线条。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "color",
+            "label": "色彩",
+            "value": "无特殊需求（客户未指定颜色，系统不代客决定，须由顾问携实物色卡线下核定）",
+            "infoStatus": "unknown",
+            "constraintKind": "pending",
+            "sourceQuote": null,
+            "rationale": "客户尚未选色。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "motif",
+            "label": "装饰纹样",
+            "value": "待核对袖口参考图，纹样未指定",
+            "infoStatus": "unknown",
+            "constraintKind": "pending",
+            "sourceQuote": null,
+            "rationale": "图中实际袖口细节尚未提供。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "lengthRatio",
+            "label": "长度比例",
+            "value": "下摆必须截止膝盖中间",
+            "infoStatus": "explicit",
+            "constraintKind": "hard",
+            "sourceQuote": "下摆必须截止膝盖中间",
+            "rationale": "客户指定下摆位置，照片只供袖口参考。",
+            "ergonomicCue": "站姿标定膝中位置并确认下摆水平。"
+          },
+          {
+            "key": "easeAllowance",
+            "label": "松弛余量",
+            "value": "腰腹与裙摆以落座、迈步舒适为放量方向，由版师量体试身核定",
+            "infoStatus": "unknown",
+            "constraintKind": "pending",
+            "sourceQuote": null,
+            "rationale": "体态及动作所需空间待现场核实。",
+            "ergonomicCue": "试坐并自然迈步。"
+          }
+        ],
+        "threeBuckets": {
+          "userExplicit": [
+            "家宴穿一条连衣裙",
+            "下摆必须到膝盖中间",
+            "照片仅参考袖口，排除照片中的脚踝裙长",
+            "颜色还未选择"
+          ],
+          "systemSuggested": [
+            "轻微A字裙身，面料柔软并有适度垂感"
+          ],
+          "needsHumanVerification": [
+            "核对照片袖口细节、选领型和实物色卡",
+            "量体定位膝中裙长，试坐核定放量"
+          ]
+        }
+      }
+    },
+    {
+      "id": "07",
+      "input": {
+        "businessType": "corporate_uniform",
+        "rawNarrative": "展厅给讲解员做西装，十四个人每人要两套。为了藏住领夹麦克风，驳领一定得有。若现场灯光太白，可能再看深绿；负责人还没给颜色签字。",
+        "season": "autumn",
+        "projectName": "",
+        "targetSceneId": "scene-studio-minimal",
+        "clientName": "",
+        "groupSize": ""
+      },
+      "userPromptSha256": "a26fe1a95671138cb2a672dc20170993004e9840b5c429c2d3a0d5be74e5b993",
+      "output": {
+        "schemaVersion": "sartoria_requirement_v1",
+        "aestheticArchetype": "展厅讲解员职业西装",
+        "emotionTags": [
+          "专业",
+          "整洁",
+          "亲和",
+          "利落"
+        ],
+        "colorSpecifiedByUser": true,
+        "bodyErgonomics": [
+          "驳领处需留出夹麦位置",
+          "抬臂指引展品时检查领面稳定与袖笼活动度"
+        ],
+        "followUpQuestions": [
+          "能否携实际领夹麦克风试样，确认夹位、遮挡和走线？",
+          "是否可在展厅实际灯光下由负责人看样，决定是否考虑深绿并签字定色？"
+        ],
+        "officialSpecs": [
+          {
+            "key": "category",
+            "label": "品类",
+            "value": "展厅讲解员西装，十四人每人两套，共二十八套",
+            "infoStatus": "explicit",
+            "constraintKind": "hard",
+            "sourceQuote": "展厅给讲解员做西装，十四个人每人要两套",
+            "rationale": "按人员与每人套数折算总量。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "patternStructure",
+            "label": "版型结构",
+            "value": "建议前身平整，预留麦线通道",
+            "infoStatus": "suggested",
+            "constraintKind": "soft",
+            "sourceQuote": null,
+            "rationale": "方便讲解员佩戴设备并保持衣面整洁。",
+            "ergonomicCue": "转身与指引动作中检查线路牵拉。"
+          },
+          {
+            "key": "collar",
+            "label": "领型",
+            "value": "必须有驳领，可遮住领夹麦克风",
+            "infoStatus": "explicit",
+            "constraintKind": "hard",
+            "sourceQuote": "为了藏住领夹麦克风，驳领一定得有",
+            "rationale": "驳领承担设备遮挡功能。",
+            "ergonomicCue": "带麦检查驳领翻折与稳定性。"
+          },
+          {
+            "key": "fabric",
+            "label": "面料",
+            "value": "建议选能保持驳领形状、活动时摩擦声较轻的西装料",
+            "infoStatus": "suggested",
+            "constraintKind": "soft",
+            "sourceQuote": null,
+            "rationale": "有助于维持领面外观及收音效果。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "color",
+            "label": "色彩",
+            "value": "仅当现场灯光太白时可能考虑深绿，未签字定色",
+            "infoStatus": "explicit",
+            "constraintKind": "soft",
+            "sourceQuote": "若现场灯光太白，可能再看深绿；负责人还没给颜色签字",
+            "rationale": "深绿是受灯光条件限制的候选。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "motif",
+            "label": "装饰纹样",
+            "value": "建议素面",
+            "infoStatus": "suggested",
+            "constraintKind": "soft",
+            "sourceQuote": null,
+            "rationale": "使观众注意力集中于讲解与展品。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "lengthRatio",
+            "label": "长度比例",
+            "value": "建议常规西装衣长，分人试调",
+            "infoStatus": "suggested",
+            "constraintKind": "soft",
+            "sourceQuote": null,
+            "rationale": "便于站立讲解和展厅巡行。",
+            "ergonomicCue": null
+          },
+          {
+            "key": "easeAllowance",
+            "label": "松弛余量",
+            "value": "重点检查肩背与袖笼放量，待版师量体试身核定",
+            "infoStatus": "unknown",
+            "constraintKind": "pending",
+            "sourceQuote": null,
+            "rationale": "讲解手势及设备配戴会影响样衣活动表现。",
+            "ergonomicCue": "佩戴麦克风模拟指示展品。"
+          }
+        ],
+        "threeBuckets": {
+          "userExplicit": [
+            "展厅讲解员十四人，每人两套西装",
+            "为藏住领夹麦克风必须有驳领",
+            "仅在现场灯光太白时可能再看深绿，颜色未签字"
+          ],
+          "systemSuggested": [
+            "前身预留走线，选领面稳定、摩擦声较轻的面料",
+            "素面与常规衣长"
+          ],
+          "needsHumanVerification": [
+            "实际展厅照明下由负责人核定色样",
+            "用实际麦克风试夹，检查遮挡和收音",
+            "按十四人量体核定衣长与活动余量"
+          ]
+        }
+      }
+    }
+  ]
+}

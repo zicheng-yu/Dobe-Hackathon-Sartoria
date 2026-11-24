@@ -155,6 +155,15 @@ export const SARTORIA_SYSTEM_PROMPT = [
   '5. 严禁凭空编造具体厘米数：easeAllowance 字段只给放量方向建议（如肩背、袖笼、腹部、裙摆等方向），严禁编造原文未出现的“+4cm”“6厘米”等具体松量数值，且 infoStatus 必须为 unknown（待版师量体与试身核定）。',
   '6. 严禁包含正式报价、具体交期承诺、真实库存结论或 CAD 生产定版结论；followUpQuestions 输出 0–2 条最关键的待核实追问。',
   '7. emotionTags 输出 3–5 个精炼中文审美标签；threeBuckets 清晰分离 userExplicit、systemSuggested、needsHumanVerification 三类信息。',
+  'aestheticArchetype 标题优先使用客户明确的风格、品类或材质。若提及排除条件，保留其对象、否定方向和程度：仅排除强反光时，中等光泽仍可用，标题可省略光泽或写“避开强反光”。只有客户明确选择低光泽或哑光时才用相应词语命名。',
+  '8. 在 threeBuckets.userExplicit 的正文优先写明本次明确的成衣数量、具名场地和委托性质，最多 8 条，可合并相关要求。成衣数量须写出数字和原文已给的单位，包括一件、一套与多件多套；若数量对应明确品类，也写入 category.value，不能只留在 sourceQuote 里。保留客户点名的完整场地或活动名称；遇公司、机构或团队统一订做时，写明团体委托及原文所指的委托方或团队。',
+  '9. 委托性质看实际下单和使用关系。为工作团队配发工装，或由采购与门店管理人员代表用工方共同安排工作服，即使未出现“团体”或机构全称，也在 userExplicit 写明团体委托并保留原文中的对象或决策角色作为依据。个人自用、代家人亲友下单或家人同穿属于个人委托。仅有人数、成衣数量或职业称谓不足以认定团体委托；未说出的机构名称和穿着团队不得补写。',
+  '10. 在所有字段区分成衣件数、套数、穿着人数和每人配额，分别保留原文明确的数字及其对象。成衣件套数不能推作人数或每人配额，套装品类也不能推作一套。若人数和每人配额均已明确，可另列可直接计算的总量并写明计算依据。原文未给单位时保留数量所指对象，不擅加“件”或“套”。',
+  '11. 原文把已定成衣数量限定在首批、本批或试点范围时，在 userExplicit 和适用的 category.value 显式保留该范围及数量；未给整单累计数量时另列“累计总量待确认”。“先”直接限定成衣订做数量（如“先订／先下单”后接数量），即使没有“批”字，也按当前批次的已定数量记录。仅表达流程顺序的“先”（如先登记、先看样）不构成分批依据。',
+  '12. 明确事实只取自客户需求原文；业务类型、季候和项目参考名称仅供理解语境。保留本次已确认的要求与明确排除，把尚未确定的数量、改期换场和委托安排放入 needsHumanVerification；历史订单、已撤回的说法和未决定的选项不能写成当前确认。',
+  '13. threeBuckets.needsHumanVerification 是待办清单，明确列出尚未确认且影响选配或交接的需求，即使客户未提及、未明确说“待定”，或者该项未入选 0–2 条追问。逐项检查成衣数量（含仅确认分批时的累计总量）、穿着场地或使用环境、洗护方式、具体成衣品类、面料成分、穿着季节。岗位与决策角色不能确认穿着场地；“工装／工作服／职业服”仅说明用途，不能确认具体品类；耐皱、低光泽等性能不能确认面料成分；活动名、提交时间和表单季候不能确认穿着季节。如相关字段缺失或未定，在待办清单正文用对应字段名写明“待确认”，勿仅在规格解释、系统建议或追问里提及。',
+  '14. needsHumanVerification 最多 8 条。优先列客户明确悬置的内容和上述待确认需求；必要时将相关待办合并一条，每个待确认字段仍须具名。保留色彩核对和量体核定边界。避免重复事项；尽量使用短句，规格理由和人体工学提示保持简短。',
+  '15. 提交前复核订单总量：上下装分体、套内单品的件数只描述结构。若只知道每套由几件组成，未说订几套，在 needsHumanVerification 正文直接列“订单总套数待确认”；是否增设备份是另一项问题。若已明确订量，保留客户给出的单位和批次范围。',
 ].join('\n');
 
 const SPEC_DEFAULT_LABELS: Record<OfficialSpecKey, string> = {
@@ -183,6 +192,7 @@ function quoteExistsInNarrative(quote: string, rawNarrative: string): boolean {
 
 const VALID_INFO_STATUS = new Set<string>(['explicit', 'suggested', 'unknown']);
 const VALID_CONSTRAINT_KIND = new Set<string>(['hard', 'soft', 'excluded', 'pending']);
+const MAX_VERIFICATION_ITEMS = 8;
 
 export type ValidationOutcome =
   | {
@@ -348,7 +358,7 @@ export function validateStructuredRequirement(
   const followUpQuestions = cleanStrArray(obj.followUpQuestions, 2);
   const userExplicit = cleanStrArray(rawBuckets.userExplicit, 8);
   const systemSuggested = cleanStrArray(rawBuckets.systemSuggested, 8);
-  const needsHumanVerification = cleanStrArray(rawBuckets.needsHumanVerification, 8);
+  const needsHumanVerification = cleanStrArray(rawBuckets.needsHumanVerification, MAX_VERIFICATION_ITEMS);
 
   if (emotionTags.length === 0) {
     return { ok: false, reason: 'emotionTags 不能为空' };
@@ -364,6 +374,10 @@ export function validateStructuredRequirement(
   }
   if (!needsHumanVerification.some((line) => line.includes('量体') || line.includes('松量'))) {
     needsHumanVerification.push('精确净体尺寸与松量厘米数须由版师实测与试穿核定');
+  }
+  if (needsHumanVerification.length > MAX_VERIFICATION_ITEMS) {
+    const groupedItems = needsHumanVerification.splice(MAX_VERIFICATION_ITEMS - 1);
+    needsHumanVerification.push(groupedItems.join('；'));
   }
 
   return {

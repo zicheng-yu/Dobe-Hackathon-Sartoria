@@ -9,29 +9,56 @@ import type {
   Version,
 } from '../types/decisions';
 import type { DeconstructedRequirement, OfficialSpecItem, RequirementInput } from '../types/sartoria';
+import { buildColorSpec } from './colorPresentation';
 import { deconstructLocally } from './deconstructEngine';
 import { evaluateFeasibility } from './matchingEngine';
 import { generateVisualPromptPack } from './promptEngine';
 import { generateProposalDraft } from './proposalEngine';
-import { describeRequirementValue, requirementFields } from './requirementInterview';
+import { describeRequirementValue, extractRevisionConstraints, requirementFields } from './requirementInterview';
+import { quantityScopeOf } from './requirementQuantity';
 
 function statement(requirement: DecisionRequirement, field: ConstraintField): Constraint | undefined {
   if (requirement.constraints.some((constraint) => constraint.field === field && constraint.blocking)) return undefined;
   const known = requirement.constraints.filter((constraint) => constraint.field === field &&
     constraint.op === 'eq' && constraint.value !== null && constraint.level !== 'pending');
-  return known.find((constraint) => constraint.state === 'confirmed') ??
-    known.find((constraint) => constraint.state === 'explicit') ?? known[0];
+  const order = field === 'quantity' ? known.filter((item) => quantityScopeOf(item) === 'order' && item.state !== 'suggested') : [];
+  const options = order.length ? order : known;
+  return options.find((constraint) => constraint.state === 'confirmed') ??
+    options.find((constraint) => constraint.state === 'explicit') ?? options[0];
+}
+
+function groundOnlineArchetype(requirement: DecisionRequirement, title: string): string {
+  const exclusions = requirement.constraints.filter(({ field, op, state, level }) => field === 'luster' && op === 'neq' &&
+    (state === 'confirmed' || state === 'explicit') && level !== 'pending');
+  if (!exclusions.length || exclusions.some(({ value }) => value !== 'high')) return title;
+
+  const chosenLuster = statement(requirement, 'luster');
+  if (chosenLuster?.value === 'low' && chosenLuster.state !== 'suggested') return title;
+
+  // Compact ranges in a headline allow medium sheen as well.
+  const titleForParsing = title.replace(/中低光泽|低光泽(?:至|到)中等?光泽|中等光泽/gu, '微光泽');
+  const assertsLow = extractRevisionConstraints({ id: 'archetype', text: titleForParsing }, 'initial')
+    .some(({ field, op, value }) => field === 'luster' && op === 'eq' && value === 'low');
+  if (!assertsLow) return title;
+
+  const direction = (['style', 'fabric', 'category'] as const).map((field) => {
+    const choice = statement(requirement, field);
+    return choice?.level === 'hard' && choice.state !== 'suggested' ? describeRequirementValue(field, choice.value) : '';
+  }).join('');
+  const lusterBoundary = exclusions.some(({ level }) => level === 'hard') ? '避开高光泽' : '倾向避开高光泽';
+  return `${direction || '定制成衣'} · ${lusterBoundary}`;
 }
 
 export function decisionInput(requirement: DecisionRequirement, candidate?: CandidateCombination | null): RequirementInput {
   const { input } = requirement;
   const business = statement(requirement, 'businessType')?.value;
-  const quantity = statement(requirement, 'quantity')?.value;
+  const quantity = statement(requirement, 'quantity');
   const season = statement(requirement, 'season')?.value;
   return {
     ...input,
     businessType: business === 'corporate_uniform' || business === 'private_couture' ? business : input.businessType,
-    groupSize: typeof quantity === 'number' ? `${quantity} 套` : input.groupSize,
+    groupSize: quantity ? describeRequirementValue('quantity', quantity.value,
+      quantity.quote ?? (quantity.state === 'suggested' ? input.groupSize : null), quantity.quantityScope) : input.groupSize,
     season: season === 'spring' || season === 'summer' || season === 'autumn' || season === 'winter' || season === 'all_season'
       ? season : input.season,
     targetSceneId: candidate?.config.sceneId ?? input.targetSceneId,
@@ -40,11 +67,12 @@ export function decisionInput(requirement: DecisionRequirement, candidate?: Cand
 
 export function decisionPresentation(
   requirement: DecisionRequirement,
-  presentation = deconstructLocally(decisionInput(requirement)),
+  presentation = deconstructLocally(decisionInput(requirement), requirement.constraints),
 ): DeconstructedRequirement {
-  const color = statement(requirement, 'color');
-  const colorSpecifiedByUser = color?.state === 'explicit' || color?.state === 'confirmed';
+  const color = buildColorSpec(requirement.constraints);
+  const colorSpecifiedByUser = color.provenance === 'user_explicit';
   const officialSpecs = presentation.officialSpecs.map((spec): OfficialSpecItem => {
+    if (spec.key === 'color') return { ...spec, ...color };
     const value = statement(requirement, spec.key);
     const assertions = requirement.constraints.filter((item) => item.field === spec.key);
     const pending = assertions.find((item) => item.state === 'unknown' &&
@@ -55,9 +83,6 @@ export function decisionPresentation(
       return { ...spec, value: [...facts, '具体选项待确认'].join('，'), provenance: 'needs_human_verification',
         constraintKind: 'pending', sourceQuote: pending?.quote ?? exclusions[0]?.quote ?? null,
         sourceNote: pending?.reason ?? '已记录排除项，具体选项由顾问与客户复核。' };
-    }
-    if (spec.key === 'color' && !colorSpecifiedByUser) {
-      return { ...spec, value: '色彩待客户确认', provenance: 'needs_human_verification', sourceNote: '当前需求没有经确认的正向色彩条件。' };
     }
     if (!value) return spec;
     const label = describeRequirementValue(spec.key, value.value);
@@ -71,16 +96,25 @@ export function decisionPresentation(
     };
   });
   const originalBuckets = presentation.threeBuckets;
+  const onlineReview = requirement.onlineReview;
+  const reviewNotes = presentation.engineUsed === 'llm_api' ? [] : originalBuckets.needsHumanVerification;
   const sourcedConstraints = requirement.constraints.filter(({ state }) => state === 'confirmed' || state === 'explicit');
   return {
     ...presentation,
+    aestheticArchetype: presentation.engineUsed === 'llm_api'
+      ? groundOnlineArchetype(requirement, presentation.aestheticArchetype) : presentation.aestheticArchetype,
     colorSpecifiedByUser,
     officialSpecs,
+    dimensions: presentation.dimensions.map((dimension) => dimension.key === 'colorSystem'
+      ? { ...dimension, value: color.value, detail: '最终按顾问与客户核定的实物色卡确认成衣用色。' }
+      : dimension),
     threeBuckets: {
       ...originalBuckets,
-      userExplicit: sourcedConstraints.map(({ field, op, value, level }) =>
-        `${requirementFields[field].label}：${op === 'neq' ? '排除 ' : ''}${describeRequirementValue(field, value)}${level === 'preference' ? '（偏好）' : ''}`),
+      userExplicit: sourcedConstraints.map(({ field, op, value, level, quote, quantityScope }) =>
+        `${requirementFields[field].label}：${op === 'neq' ? '排除 ' : ''}${describeRequirementValue(field, value, quote, quantityScope)}${level === 'preference' ? '（偏好）' : ''}`),
+      needsHumanVerification: [...new Set([...reviewNotes, ...(onlineReview?.notes ?? [])])],
     },
+    followUpQuestions: onlineReview?.questions ?? (presentation.engineUsed === 'llm_api' ? [] : presentation.followUpQuestions),
   };
 }
 
