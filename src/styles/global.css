@@ -1734,7 +1734,26 @@ button {
   aspect-ratio: 16 / 9;
   border-radius: 12px;
   overflow: hidden;
-  background: #111111;
+  background: var(--bg-page);
+  border: 1px solid var(--border-hairline);
+}
+
+.video-chapters-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 1120px) {
+  .video-chapters-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .video-chapters-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .video-placeholder-frame {

@@ -2,7 +2,6 @@ import {
   ArrowRight,
   ArrowUpRight,
   Check,
-  CheckCircle2,
   Copy,
   Download,
   PlayCircle,
@@ -63,8 +62,16 @@ export function VideoShowcase({ onNavigate }: VideoShowcaseProps) {
   const handleSeekToChapter = (sec: number) => {
     const el = videoRef.current;
     if (!el) return;
-    el.currentTime = sec;
-    el.play().catch(() => {});
+    const seekAndPlay = () => {
+      el.currentTime = sec;
+      el.play().catch(() => {});
+    };
+    if (el.readyState < 1) {
+      el.addEventListener('loadedmetadata', seekAndPlay, { once: true });
+      el.load();
+      return;
+    }
+    seekAndPlay();
   };
 
   return (
@@ -192,14 +199,41 @@ export function VideoShowcase({ onNavigate }: VideoShowcaseProps) {
         )}
       </section>
 
-      <div className="deconstruct-grid" style={{ marginTop: 24 }}>
-        <section className="surface-card">
-          <h2 style={{ fontSize: 15.5, fontWeight: 600, marginBottom: 14 }}>演示章节</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {DEMO_SCRIPT_CHAPTERS.map((ch) => (
-              <div key={ch.time} className="ledger-block">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                  <strong style={{ fontSize: 13.5 }}>{ch.title}</strong>
+      <section className="surface-card" style={{ marginTop: 24 }}>
+        <h2 style={{ fontSize: 15.5, fontWeight: 600, marginBottom: 14 }}>演示章节</h2>
+        <div className="video-chapters-grid">
+          {DEMO_SCRIPT_CHAPTERS.map((ch, idx) => (
+            <div
+              key={ch.time}
+              className="ledger-block"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                gap: 12,
+                padding: 18,
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 8,
+                    marginBottom: 10,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 12,
+                      color: 'var(--ink-muted)',
+                      letterSpacing: '0.06em',
+                    }}
+                  >
+                    {String(idx + 1).padStart(2, '0')}
+                  </span>
                   {video.localMp4Path ? (
                     <button
                       type="button"
@@ -216,35 +250,33 @@ export function VideoShowcase({ onNavigate }: VideoShowcaseProps) {
                     </span>
                   )}
                 </div>
-                <p style={{ fontSize: 13, color: 'var(--ink-secondary)', marginTop: 6, lineHeight: 1.6 }}>
+                <strong style={{ display: 'block', fontSize: 14, lineHeight: 1.45 }}>
+                  {ch.title}
+                </strong>
+                <p
+                  style={{
+                    fontSize: 12.8,
+                    color: 'var(--ink-secondary)',
+                    marginTop: 8,
+                    lineHeight: 1.65,
+                  }}
+                >
                   {ch.detail}
                 </p>
-                <button
-                  type="button"
-                  className="btn-text"
-                  style={{ marginTop: 6 }}
-                  onClick={() => onNavigate('demo', ch.tab)}
-                >
-                  <span>前往该步骤</span>
-                  <ArrowRight size={13} />
-                </button>
               </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="surface-card">
-          <h2 style={{ fontSize: 15.5, fontWeight: 600, marginBottom: 14 }}>发布核验清单</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {video.hostingChecklist.map((item) => (
-              <div key={item} className="notice-row">
-                <CheckCircle2 size={14} color="var(--pass)" style={{ flexShrink: 0, marginTop: 2 }} />
-                <span>{item}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
+              <button
+                type="button"
+                className="btn-text"
+                style={{ alignSelf: 'flex-start' }}
+                onClick={() => onNavigate('demo', ch.tab)}
+              >
+                <span>前往该步骤</span>
+                <ArrowRight size={13} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

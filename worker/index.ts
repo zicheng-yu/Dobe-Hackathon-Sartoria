@@ -15,6 +15,7 @@ import {
   validateStructuredRequirement,
 } from './schema.ts';
 import { resolveVisitorIdentity } from './visitorAuth.ts';
+import { handleVideoRangeRequest } from './videoRange.ts';
 
 export { QuotaBudgetLedger };
 
@@ -532,6 +533,10 @@ export default {
 
     if (url.pathname.startsWith('/api/')) {
       return jsonResponse({ ok: false, errorCode: 'NOT_FOUND', message: 'API 路径不存在' }, 404);
+    }
+
+    if (url.pathname.startsWith('/video/') && url.pathname.endsWith('.mp4')) {
+      return handleVideoRangeRequest(request, env.ASSETS);
     }
 
     return env.ASSETS.fetch(request);

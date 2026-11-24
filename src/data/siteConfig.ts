@@ -22,10 +22,5 @@ export const SITE_CONFIG = {
     localMp4Path: '/video/sartoria-demo-3min.mp4',
     posterPath: '/video/poster.jpg',
     durationLabel: '2:51',
-    hostingChecklist: [
-      '由 Cloudflare Workers 直接托管于 sartoria.zichengyu.com/video，支持公开无密码直连与流式播放',
-      '已通过浏览器未登录无痕窗口验证音画同步、章节跳转与 1080P 播放正常',
-      '仅使用可公开的模拟静态定制素材，不展示真实客户隐私或生产系统信息',
-    ],
   },
 } as const;
