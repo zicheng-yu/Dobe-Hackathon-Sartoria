@@ -13,30 +13,44 @@ const activeFabricIds = new Set(DECISION_CATALOG.fabrics.map(({ asset }) => asse
 const visualFabrics = FABRICS.filter((fabric) => !activeFabricIds.has(fabric.id));
 const catalogCount = Object.values(DECISION_CATALOG).reduce((sum, items) => sum + items.length, 0);
 
-function AssetProvenance({ source, references = [] }: { source: AssetSource; references?: readonly AssetSource[] }) {
+function SourceReferences({
+  code,
+  source,
+  references = [],
+}: {
+  code: string;
+  source: AssetSource;
+  references?: readonly AssetSource[];
+}) {
   return (
-    <details className="disclosure" style={{ marginTop: 4, paddingTop: 8 }}>
-      <summary>
-        <span>模拟记录 · {ASSET_SOURCE_LABELS[source.kind]}</span>
-        <ChevronDown size={13} />
-      </summary>
-      <div style={{ fontSize: 12.5, color: 'var(--ink-secondary)', marginTop: 8, overflowWrap: 'anywhere' }}>
-        <div>{source.reference}</div>
-        {references.map((reference) => {
-          const link = reference.reference.match(/^(.*?)\s+(https:\/\/\S+)$/);
-          return (
-            <div key={reference.reference} style={{ marginTop: 4 }}>
-              {ASSET_SOURCE_LABELS[reference.kind]} · {link
-                ? <a href={link[2]} target="_blank" rel="noreferrer">{link[1]}</a> : reference.reference}
-            </div>
-          );
-        })}
+    <>
+      <div>
+        来源：{ASSET_SOURCE_LABELS[source.kind]} · {source.reference}
       </div>
-    </details>
+      {references.map((reference) => {
+        const link = reference.reference.match(/^(.*?)\s+(https:\/\/\S+)$/);
+        return (
+          <div key={reference.reference}>
+            参考：
+            {link ? (
+              <a href={link[2]} target="_blank" rel="noreferrer" className="doc-link">
+                {link[1]}
+              </a>
+            ) : (
+              reference.reference
+            )}
+          </div>
+        );
+      })}
+      <div className="asset-card-code">{code}</div>
+    </>
   );
 }
 
-function CaseCatalogCard({ record, onTry }: {
+function CaseCatalogCard({
+  record,
+  onTry,
+}: {
   record: (typeof DECISION_CASE_REFERENCES)[number];
   onTry: (id: string) => void;
 }) {
@@ -46,18 +60,27 @@ function CaseCatalogCard({ record, onTry }: {
       <img
         src={asset.heroImage}
         alt={asset.title}
-        style={{ width: '100%', height: 156, objectFit: 'cover', borderRadius: 10 }}
+        style={{ width: '100%', height: 152, objectFit: 'cover', borderRadius: 10 }}
       />
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-muted)' }}>
-        <span style={{ fontFamily: 'var(--font-mono)' }}>{asset.code}</span>
-        <span>{active ? asset.referenceCycle : '归档案例参考'}</span>
+      <div className="asset-card-kicker">
+        <span>{asset.clientProfile}</span>
+        <span>{active ? asset.referenceCycle : '归档参考'}</span>
       </div>
-      <h3 style={{ fontSize: 15.5, fontWeight: 600 }}>{asset.title}</h3>
-      <p style={{ fontSize: 13, color: 'var(--ink-secondary)', lineHeight: 1.55 }}>{asset.reviewSummary}</p>
-      <AssetProvenance source={source} />
+      <h3 className="asset-card-title">{asset.title}</h3>
+      <p className="asset-card-desc">{asset.reviewSummary}</p>
+      <details className="disclosure" style={{ marginTop: 2, paddingTop: 8 }}>
+        <summary>
+          <span>详情</span>
+          <ChevronDown size={13} />
+        </summary>
+        <div className="asset-card-details">
+          <div>规模：{asset.groupSize}</div>
+          <SourceReferences code={asset.code} source={source} />
+        </div>
+      </details>
       <button
         type="button"
-        className="btn-black"
+        className="btn-outline"
         style={{ marginTop: 'auto', width: '100%' }}
         onClick={() => onTry(asset.id)}
       >
@@ -92,24 +115,47 @@ export function AssetKnowledgeBase({
   const [packFilter, setPackFilter] = useState<'all' | StylePackId>('all');
 
   const q = query.trim().toLowerCase();
-  function visible(asset: { id: string; code: string; stylePackId: StylePackId; styleTags: string[] }, ...terms: string[]) {
-    return (packFilter === 'all' || asset.stylePackId === packFilter)
-      && [asset.id, asset.code, ...asset.styleTags, ...terms].join(' ').toLowerCase().includes(q);
+  function visible(
+    asset: { id: string; code: string; stylePackId: StylePackId; styleTags: string[] },
+    ...terms: string[]
+  ) {
+    return (
+      (packFilter === 'all' || asset.stylePackId === packFilter) &&
+      [asset.id, asset.code, ...asset.styleTags, ...terms].join(' ').toLowerCase().includes(q)
+    );
   }
   const filteredPatterns = DECISION_CATALOG.patterns.filter(({ asset, source }) =>
-    visible(asset, asset.name, asset.shortSpec, asset.silhouette, ASSET_SOURCE_LABELS[source.kind], source.reference));
+    visible(asset, asset.name, asset.shortSpec, asset.silhouette, ASSET_SOURCE_LABELS[source.kind], source.reference)
+  );
   const filteredFabrics = DECISION_CATALOG.fabrics.filter(({ asset, profile, source }) =>
-    visible(asset, asset.name, asset.composition, asset.weave, asset.careAndMoqNote, ASSET_SOURCE_LABELS[source.kind], source.reference,
-      ...(profile.publicReferences ?? []).map((reference) => `${ASSET_SOURCE_LABELS[reference.kind]} ${reference.reference}`)));
+    visible(
+      asset,
+      asset.name,
+      asset.composition,
+      asset.weave,
+      asset.careAndMoqNote,
+      ASSET_SOURCE_LABELS[source.kind],
+      source.reference,
+      ...(profile.publicReferences ?? []).map(
+        (reference) => `${ASSET_SOURCE_LABELS[reference.kind]} ${reference.reference}`
+      )
+    )
+  );
   const filteredCrafts = DECISION_CATALOG.crafts.filter(({ asset, source }) =>
-    visible(asset, asset.name, asset.heritageLevel, asset.placement, ASSET_SOURCE_LABELS[source.kind], source.reference));
+    visible(asset, asset.name, asset.heritageLevel, asset.placement, ASSET_SOURCE_LABELS[source.kind], source.reference)
+  );
   const filteredCases = DECISION_CASE_REFERENCES.filter(({ asset, source }) =>
-    visible(asset, asset.title, asset.clientProfile, ASSET_SOURCE_LABELS[source.kind], source.reference));
+    visible(asset, asset.title, asset.clientProfile, ASSET_SOURCE_LABELS[source.kind], source.reference)
+  );
   const archivedCases = filteredCases.filter(({ active }) => !active);
-  const filteredVisualFabrics = visualFabrics.filter((asset) => visible(asset, asset.name, asset.composition, asset.weave));
+  const filteredVisualFabrics = visualFabrics.filter((asset) =>
+    visible(asset, asset.name, asset.composition, asset.weave)
+  );
   const searchCount = {
-    patterns: filteredPatterns.length, fabrics: filteredFabrics.length + filteredVisualFabrics.length,
-    crafts: filteredCrafts.length, cases: filteredCases.length,
+    patterns: filteredPatterns.length,
+    fabrics: filteredFabrics.length + filteredVisualFabrics.length,
+    crafts: filteredCrafts.length,
+    cases: filteredCases.length,
   }[assetTab];
 
   return (
@@ -117,7 +163,7 @@ export function AssetKnowledgeBase({
       <div className="page-head">
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
           <h1 className="page-h1">定制资产库</h1>
-          <span style={{ fontSize: 13, color: 'var(--ink-secondary)' }}>{catalogCount} 条模拟目录记录</span>
+          <span style={{ fontSize: 13, color: 'var(--ink-muted)' }}>{catalogCount} 项</span>
           <button type="button" className="btn-text" onClick={onBackToFlow}>
             <ArrowLeft size={14} />
             <span>返回当前流程</span>
@@ -126,7 +172,7 @@ export function AssetKnowledgeBase({
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <select
             className="clean-select"
-            style={{ width: 200, padding: '8px 12px', fontSize: 13 }}
+            style={{ width: 'auto', minWidth: 220, padding: '9px 14px', fontSize: 13 }}
             value={activeStylePackId}
             onChange={(e) => {
               const id = e.target.value as StylePackId;
@@ -194,15 +240,15 @@ export function AssetKnowledgeBase({
         <div style={{ position: 'relative' }}>
           <Search
             size={14}
-            color="#76767c"
+            color="#86878f"
             style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }}
           />
           <input
             className="clean-input"
-            style={{ paddingLeft: 34, width: 240, borderRadius: 999, paddingTop: 8, paddingBottom: 8 }}
+            style={{ paddingLeft: 34, width: 240, borderRadius: 999, paddingTop: 8, paddingBottom: 8, fontSize: 13 }}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="搜索编号、资产或来源…"
+            placeholder="搜索名称、特点或面料…"
             aria-label="搜索定制资产"
           />
         </div>
@@ -212,26 +258,25 @@ export function AssetKnowledgeBase({
         <div className="clean-grid">
           {filteredPatterns.map(({ asset: pat, profile, source }) => (
             <div key={pat.id} className="asset-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-muted)' }}>
-                <span style={{ fontFamily: 'var(--font-mono)' }}>{pat.code}</span>
+              <div className="asset-card-kicker">
                 <span>{pat.category}</span>
+                <span>{profile.quantity.join('–')} 套</span>
               </div>
-              <h3 style={{ fontSize: 15.5, fontWeight: 600 }}>{pat.name}</h3>
-              <div style={{ fontSize: 13, color: 'var(--ink-secondary)' }}>{pat.shortSpec}</div>
+              <h3 className="asset-card-title">{pat.name}</h3>
+              <p className="asset-card-desc">{pat.shortSpec}</p>
 
-              <details className="disclosure" style={{ marginTop: 4, paddingTop: 8 }}>
+              <details className="disclosure" style={{ marginTop: 2, paddingTop: 8 }}>
                 <summary>
-                  <span>版型参数</span>
+                  <span>详情</span>
                   <ChevronDown size={13} />
                 </summary>
-                <div style={{ fontSize: 12.5, color: 'var(--ink-muted)', marginTop: 8, lineHeight: 1.6 }}>
+                <div className="asset-card-details">
                   <div>结构：{pat.silhouette}</div>
                   <div>领型：{pat.collarType}</div>
                   <div>余量：{pat.easeAllowance}</div>
-                  <div>模拟套数：{profile.quantity.join('–')} 套</div>
+                  <SourceReferences code={pat.code} source={source} />
                 </div>
               </details>
-              <AssetProvenance source={source} />
 
               <button
                 type="button"
@@ -253,33 +298,34 @@ export function AssetKnowledgeBase({
             <div key={fab.id} className="asset-card">
               <div
                 style={{
-                  height: 64,
+                  height: 58,
                   borderRadius: 10,
                   background: `linear-gradient(135deg, ${fab.pbr.baseColor}, ${fab.pbr.accentColor} 60%, ${fab.pbr.sheenColor})`,
-                  border: '1px solid rgba(0,0,0,0.08)',
+                  border: '1px solid var(--border-hairline)',
                 }}
               />
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-muted)' }}>
-                <span style={{ fontFamily: 'var(--font-mono)' }}>{fab.code}</span>
+              <div className="asset-card-kicker">
                 <span>
                   {fab.gsm}g/m² · {fab.drape}
                 </span>
+                <span>{profile.care ? SIMULATED_CARE_LABELS[profile.care] : '洗护待核'}</span>
               </div>
-              <h3 style={{ fontSize: 15.5, fontWeight: 600 }}>{fab.name}</h3>
-              <div style={{ fontSize: 13, color: 'var(--ink-secondary)' }}>{fab.composition}</div>
+              <h3 className="asset-card-title">{fab.name}</h3>
+              <p className="asset-card-desc">{fab.composition}</p>
 
-              <details className="disclosure" style={{ marginTop: 4, paddingTop: 8 }}>
+              <details className="disclosure" style={{ marginTop: 2, paddingTop: 8 }}>
                 <summary>
-                  <span>护理说明</span>
+                  <span>详情</span>
                   <ChevronDown size={13} />
                 </summary>
-                <p style={{ fontSize: 12.5, color: 'var(--ink-muted)', marginTop: 8, lineHeight: 1.55 }}>
-                  模拟洗护：{profile.care ? SIMULATED_CARE_LABELS[profile.care] : '待核'} · 耐皱：{profile.wrinkleResistance === undefined ? '待核' : profile.wrinkleResistance ? '耐皱' : '易皱'}
-                  <br />
-                  {fab.careAndMoqNote}
-                </p>
+                <div className="asset-card-details">
+                  <div>
+                    耐皱：{profile.wrinkleResistance === undefined ? '待核' : profile.wrinkleResistance ? '耐皱' : '易皱'} · 织法：{fab.weave}
+                  </div>
+                  <div>{fab.careAndMoqNote}</div>
+                  <SourceReferences code={fab.code} source={source} references={profile.publicReferences} />
+                </div>
               </details>
-              <AssetProvenance source={source} references={profile.publicReferences} />
 
               <button
                 type="button"
@@ -298,18 +344,21 @@ export function AssetKnowledgeBase({
       {assetTab === 'fabrics' && filteredVisualFabrics.length > 0 && (
         <details className="disclosure" style={{ marginTop: 18, paddingTop: 10 }}>
           <summary>
-            <span>旧版视觉参考（{filteredVisualFabrics.length}）</span>
+            <span>更多配色参考（{filteredVisualFabrics.length}）</span>
             <ChevronDown size={13} />
           </summary>
-          <p style={{ fontSize: 13, color: 'var(--ink-secondary)', margin: '8px 0 12px' }}>
-            历史配色展示。补录决策属性后可纳入组合匹配。
-          </p>
-          <div className="clean-grid">
+          <div className="clean-grid" style={{ marginTop: 12 }}>
             {filteredVisualFabrics.map((fabric) => (
               <div key={fabric.id} className="asset-card">
-                <div style={{ height: 44, borderRadius: 8, background: `linear-gradient(135deg, ${fabric.pbr.baseColor}, ${fabric.pbr.sheenColor})` }} />
-                <div style={{ fontSize: 12, color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>{fabric.code}</div>
-                <h3 style={{ fontSize: 15, fontWeight: 600 }}>{fabric.name}</h3>
+                <div
+                  style={{
+                    height: 44,
+                    borderRadius: 8,
+                    background: `linear-gradient(135deg, ${fabric.pbr.baseColor}, ${fabric.pbr.sheenColor})`,
+                  }}
+                />
+                <h3 className="asset-card-title">{fabric.name}</h3>
+                <p className="asset-card-desc">{fabric.composition}</p>
               </div>
             ))}
           </div>
@@ -323,17 +372,25 @@ export function AssetKnowledgeBase({
               <img
                 src={craft.closeupImage}
                 alt={craft.name}
-                style={{ width: '100%', height: 136, objectFit: 'cover', borderRadius: 10 }}
+                style={{ width: '100%', height: 132, objectFit: 'cover', borderRadius: 10 }}
               />
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-muted)' }}>
-                <span>{craft.code} · {craft.heritageLevel}</span>
+              <div className="asset-card-kicker">
+                <span>{craft.heritageLevel}</span>
                 <span>+{craft.extraLeadDays} 工作日</span>
               </div>
-              <h3 style={{ fontSize: 15.5, fontWeight: 600 }}>{craft.name}</h3>
-              <p style={{ fontSize: 13, color: 'var(--ink-secondary)', lineHeight: 1.55 }}>
-                {craft.highlightCopy}
-              </p>
-              <AssetProvenance source={source} />
+              <h3 className="asset-card-title">{craft.name}</h3>
+              <p className="asset-card-desc">{craft.highlightCopy}</p>
+              <details className="disclosure" style={{ marginTop: 2, paddingTop: 8 }}>
+                <summary>
+                  <span>详情</span>
+                  <ChevronDown size={13} />
+                </summary>
+                <div className="asset-card-details">
+                  <div>部位：{craft.placement}</div>
+                  <div>{craft.usageStandard}</div>
+                  <SourceReferences code={craft.code} source={source} />
+                </div>
+              </details>
               <button
                 type="button"
                 className="btn-outline"
@@ -350,9 +407,11 @@ export function AssetKnowledgeBase({
 
       {assetTab === 'cases' && (
         <div className="clean-grid">
-          {filteredCases.filter(({ active }) => active).map((record) => (
-            <CaseCatalogCard key={record.asset.id} record={record} onTry={onTryCaseInStudio} />
-          ))}
+          {filteredCases
+            .filter(({ active }) => active)
+            .map((record) => (
+              <CaseCatalogCard key={record.asset.id} record={record} onTry={onTryCaseInStudio} />
+            ))}
         </div>
       )}
       {assetTab === 'cases' && archivedCases.length > 0 && (

@@ -256,9 +256,8 @@ export function ConfiguratorStudio({
             </div>
 
             {!deconstructed.colorSpecifiedByUser && (
-              <div className="notice-row" style={{ marginTop: 10 }}>
-                <span className="status-dot dot-caution" />
-                <span>客户未指定颜色，色卡仅示意织纹，最终须线下核色。</span>
+              <div style={{ fontSize: 12, color: 'var(--ink-muted)', marginTop: 6 }}>
+                未指定颜色，最终以实物色卡为准
               </div>
             )}
 

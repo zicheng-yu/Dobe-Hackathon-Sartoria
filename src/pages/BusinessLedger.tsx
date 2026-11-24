@@ -256,7 +256,7 @@ export function BusinessLedger({
                         </div>
                       </td>
                       <td style={{ fontSize: 12.5, color: 'var(--ink-secondary)' }}>
-                        <div>{pat?.code ?? rec.config?.patternId ?? '暂无合格组合'}</div>
+                        <div>{pat?.category ?? pat?.name ?? (rec.config ? '已选版型' : '暂无合格组合')}</div>
                         <div style={{ color: 'var(--ink-muted)' }}>{fab?.shortName}</div>
                       </td>
                       <td
@@ -333,11 +333,11 @@ export function BusinessLedger({
                 {selectedConfig ? <div className="ledger-asset-list">
                   <div>
                     <strong>版型：</strong>
-                    {selectedPattern ? `${selectedPattern.code} ${selectedPattern.name}` : selectedConfig.patternId}
+                    {selectedPattern ? selectedPattern.name : selectedConfig.patternId}
                   </div>
                   <div>
                     <strong>面料：</strong>
-                    {selectedFabric ? `${selectedFabric.code} ${selectedFabric.name}` : selectedConfig.fabricId}
+                    {selectedFabric ? selectedFabric.name : selectedConfig.fabricId}
                   </div>
                   <div>
                     <strong>工艺：</strong>
@@ -348,7 +348,7 @@ export function BusinessLedger({
                   <div>
                     <strong>案例：</strong>
                     {selectedCases.length > 0
-                      ? selectedCases.map((hc) => `${hc.code} ${hc.title}`).join('；')
+                      ? selectedCases.map((hc) => hc.title).join('；')
                       : '—'}
                   </div>
                   <div>

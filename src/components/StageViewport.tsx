@@ -63,8 +63,7 @@ export function StageViewport({
           <span style={{ color: 'var(--ink-muted)' }}>·</span>
           <span>{scene.shortName}</span>
           <span style={{ color: 'var(--ink-muted)' }}>·</span>
-          <span>规则匹配分 {ruleScore}</span>
-          {config.activeView === 'scene_look' && !visual.isExactPhotographicVariant && <span>模拟场景参考图</span>}
+          <span>匹配 {ruleScore}</span>
         </div>
 
         <div className="segmented" role="tablist" aria-label="视图切换">
@@ -284,16 +283,6 @@ export function StageViewport({
               onClick={() => onSelectScene(s.id)}
               title={isMatched ? '适配当前需求的推荐场景' : s.name}
             >
-              <span
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: '50%',
-                  background: s.accentSwatch,
-                  border: '1px solid rgba(0,0,0,0.12)',
-                  flexShrink: 0,
-                }}
-              />
               <span>{s.shortName}</span>
             </button>
           );

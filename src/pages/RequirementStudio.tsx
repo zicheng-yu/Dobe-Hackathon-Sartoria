@@ -8,7 +8,7 @@ import {
   RefreshCw,
   Sparkles,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { RadarChartSVG } from '../components/RadarChartSVG';
 import { RequirementConstraints } from '../components/RequirementConstraints';
 import { PRESET_DEMO_CASES } from '../data/presetDemos';
@@ -66,7 +66,7 @@ function specText(items: Constraint[]): string {
 const ANALYSIS_STAGES = [
   '识别品类、体态特征与穿着痛点',
   '转译 8 项专业参数与 6 维审美',
-  '划分用户明确、系统建议与人工核实边界',
+  '整理硬约束、偏好建议与待确认项',
 ];
 
 export function RequirementStudio({
@@ -88,6 +88,28 @@ export function RequirementStudio({
   onProceedToConfigurator,
 }: RequirementStudioProps) {
   const [outputTab, setOutputTab] = useState<'official8' | 'radar6'>('official8');
+  const [caseMenuOpen, setCaseMenuOpen] = useState(false);
+  const casePickerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!caseMenuOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (casePickerRef.current && !casePickerRef.current.contains(event.target as Node)) {
+        setCaseMenuOpen(false);
+      }
+    };
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setCaseMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [caseMenuOpen]);
+
+  const activePreset = PRESET_DEMO_CASES.find((demo) => demo.id === input.presetDemoId) ?? null;
 
   const isAnalyzing = status === 'analyzing';
   const hasResult = status === 'ready' || status === 'stale';
@@ -123,29 +145,76 @@ export function RequirementStudio({
           />
           <span>
             {engineMode === 'online_worker' && workerStatus?.configured && quota
-              ? `GPT-6.2 Astra · 今日剩 ${quota.visitor.remaining}/${quota.visitor.limit}`
-              : '本地规则引擎（离线）'}
+              ? `GPT-6.2 · 今日剩 ${quota.visitor.remaining}/${quota.visitor.limit}`
+              : '本地规则'}
           </span>
         </button>
       </div>
 
-      {/* Uniform Case Selector Pills */}
-      <div className="case-chip-row" role="group" aria-label="预设案例">
+      {/* Clean Single-Row Toolbar: New Brief + Collapsible Reference Case Picker */}
+      <div className="case-toolbar" role="group" aria-label="预设案例">
         {onStartNewRequirement && (
-          <button type="button" className="case-pill" onClick={onStartNewRequirement}>
-            <Plus size={13} aria-hidden="true" /> 新建简报
+          <button
+            type="button"
+            className="btn-outline"
+            style={{ padding: '7px 14px', fontSize: 13 }}
+            onClick={() => {
+              setCaseMenuOpen(false);
+              onStartNewRequirement();
+            }}
+          >
+            <Plus size={14} aria-hidden="true" />
+            <span>新建简报</span>
           </button>
         )}
-        {PRESET_DEMO_CASES.map((demo) => (
+
+        <div className="case-picker" ref={casePickerRef}>
           <button
-            key={demo.id}
             type="button"
-            className={`case-pill ${input.presetDemoId === demo.id ? 'active' : ''}`}
-            onClick={() => onSelectPresetDemo(demo)}
+            className="case-picker-trigger"
+            aria-haspopup="listbox"
+            aria-expanded={caseMenuOpen}
+            onClick={() => setCaseMenuOpen((open) => !open)}
           >
-            {demo.shortLabel}
+            <span className="case-picker-label">示例简报</span>
+            <span>{activePreset ? activePreset.shortLabel : '选择参考案例'}</span>
+            <ChevronDown
+              size={14}
+              style={{
+                color: 'var(--ink-muted)',
+                transform: caseMenuOpen ? 'rotate(180deg)' : 'none',
+                transition: 'transform 160ms',
+              }}
+            />
           </button>
-        ))}
+
+          {caseMenuOpen && (
+            <div className="case-picker-menu" role="listbox" aria-label="示例简报列表">
+              {PRESET_DEMO_CASES.map((demo) => {
+                const selected = input.presetDemoId === demo.id;
+                return (
+                  <button
+                    key={demo.id}
+                    type="button"
+                    role="option"
+                    aria-selected={selected}
+                    className={`case-picker-item ${selected ? 'active' : ''}`}
+                    onClick={() => {
+                      onSelectPresetDemo(demo);
+                      setCaseMenuOpen(false);
+                    }}
+                  >
+                    <div style={{ minWidth: 0 }}>
+                      <div className="case-picker-item-title">{demo.shortLabel}</div>
+                      <div className="case-picker-item-sub">{demo.title}</div>
+                    </div>
+                    {selected && <Check size={14} style={{ flexShrink: 0, color: 'var(--ink-primary)' }} />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Clear Server Quota / Budget / Error Feedback with 1-Click Offline Fallback */}

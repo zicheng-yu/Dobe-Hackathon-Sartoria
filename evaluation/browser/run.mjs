@@ -193,7 +193,8 @@ async function verifyLocal() {
   const conference = { offline: !process.argv.includes('--http'), versions: [1, 2, 3], initialFabric: initial.version.candidate.config.fabricId, revisedFabric: revised.version.candidate.config.fabricId };
 
   await page.goto(`${local}/demo`, { waitUntil: 'domcontentloaded' });
-  await click(page, '正式外套 · 交领真丝暗纹');
+  await page.getByRole('button', { name: /示例简报/ }).click();
+  await page.getByRole('option', { name: /正式外套 · 交领真丝暗纹/ }).click();
   await analyze();
   const constraints = region('需求约束');
   await assertText(constraints, '肩臂活动余量');
@@ -215,7 +216,8 @@ async function verifyLocal() {
   await assertText(revision, '当前版本 V1');
 
   await page.goto(`${local}/demo`, { waitUntil: 'domcontentloaded' });
-  await click(page, '演出套装 · 户外舞台两件套');
+  await page.getByRole('button', { name: /示例简报/ }).click();
+  await page.getByRole('option', { name: /演出套装 · 户外舞台两件套/ }).click();
   await analyze();
   await assertText(constraints, '两件式');
   await assertText(constraints, '肩臂活动余量');

@@ -1,4 +1,6 @@
-.constraint-panel { margin-top: 20px; }
+.constraint-panel {
+  margin-top: 20px;
+}
 
 .constraint-header,
 .constraint-item-head,
@@ -10,7 +12,11 @@
   flex-wrap: wrap;
 }
 
-.constraint-header h2 { font-size: 15px; font-weight: 600; }
+.constraint-header h2 {
+  font-size: 15px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.015em;
+}
 
 .constraint-groups {
   display: grid;
@@ -30,27 +36,101 @@
 .constraint-group h3,
 .constraint-questions h3 {
   margin: 0 0 8px;
-  font-weight: 600;
+  font-weight: var(--fw-medium);
   font-size: 13px;
+  color: var(--ink-primary);
 }
 
-.constraint-group h3 { display: flex; align-items: center; gap: 8px; }
-.constraint-item { border-top: 1px solid var(--border-hairline); padding: 10px 0; }
-.constraint-item:last-child { padding-bottom: 0; }
-.constraint-item-head { font-size: 13px; font-weight: 600; }
-.constraint-panel .btn-outline, .constraint-panel .btn-black { font-size: 12px; padding: 5px 10px; }
-.constraint-value { margin: 3px 0; font-size: 14px; }
-.constraint-note { margin: 0; font-size: 12px; color: var(--ink-secondary); }
-.constraint-quote { color: var(--ink-secondary); margin: 5px 0 0; font-size: 12px; }
-.constraint-quote summary { cursor: pointer; }
-.constraint-quote blockquote, .constraint-quote p { margin: 6px 0 0; }
-.constraint-editor { display: grid; gap: 8px; margin-top: 10px; }
-.constraint-editor label { display: grid; gap: 3px; font-size: 12px; }
-.constraint-editor select, .constraint-editor input { min-width: 0; }
-.constraint-actions { justify-content: flex-start; }
-.constraint-questions { margin: 12px 0 0; font-size: 13px; }
-.constraint-questions ul { margin: 0; padding-inline-start: 20px; }
+.constraint-group h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.constraint-item {
+  border-top: 1px solid var(--border-hairline);
+  padding: 10px 0;
+}
+
+.constraint-item:last-child {
+  padding-bottom: 0;
+}
+
+.constraint-item-head {
+  font-size: 12px;
+  font-weight: var(--fw-medium);
+  color: var(--ink-muted);
+}
+
+.constraint-panel .btn-outline,
+.constraint-panel .btn-black {
+  font-size: 12px;
+  padding: 4px 10px;
+}
+
+.constraint-value {
+  margin: 4px 0 2px;
+  font-size: 14px;
+  font-weight: var(--fw-medium);
+  color: var(--ink-primary);
+}
+
+.constraint-note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.constraint-quote {
+  color: var(--ink-secondary);
+  margin: 5px 0 0;
+  font-size: 12px;
+}
+
+.constraint-quote summary {
+  cursor: pointer;
+}
+
+.constraint-quote blockquote,
+.constraint-quote p {
+  margin: 6px 0 0;
+}
+
+.constraint-editor {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.constraint-editor label {
+  display: grid;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--ink-secondary);
+}
+
+.constraint-editor select,
+.constraint-editor input {
+  min-width: 0;
+}
+
+.constraint-actions {
+  justify-content: flex-start;
+}
+
+.constraint-questions {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
+
+.constraint-questions ul {
+  margin: 0;
+  padding-inline-start: 20px;
+}
 
 @media (max-width: 700px) {
-  .constraint-groups { grid-template-columns: 1fr; }
+  .constraint-groups {
+    grid-template-columns: 1fr;
+  }
 }

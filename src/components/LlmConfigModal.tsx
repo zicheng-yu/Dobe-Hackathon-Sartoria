@@ -89,7 +89,7 @@ export function LlmConfigModal({
 
         {/* Security Assurance */}
         <div className="notice-row" style={{ marginBottom: 16 }}>
-          <ShieldCheck size={15} color="var(--pass)" style={{ flexShrink: 0, marginTop: 2 }} />
+          <ShieldCheck size={15} color="var(--ink-primary)" style={{ flexShrink: 0, marginTop: 2 }} />
           <span>
             {workerStatus === null
               ? '当前未检测到 Worker 代理（离线预览模式），自动使用本地规则引擎。'

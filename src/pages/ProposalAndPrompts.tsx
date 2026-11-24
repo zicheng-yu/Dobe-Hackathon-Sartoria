@@ -119,10 +119,9 @@ export function ProposalAndPrompts({
                 {proposal.projectName}
               </h2>
               <div style={{ fontSize: 13, color: 'var(--ink-muted)', marginTop: 4 }}>
-                {proposal.clientName} · {proposal.id}
+                {proposal.clientName}
               </div>
             </div>
-            <span className="meta-badge">AI 初稿 · 人工终审</span>
           </div>
 
           <div
@@ -147,7 +146,7 @@ export function ProposalAndPrompts({
 
           {/* Unified 3-Bucket Separation */}
           <section className="dossier-sec">
-            <h3 className="dossier-sec-h3">信息边界划分</h3>
+            <h3 className="dossier-sec-h3">需求来源拆分</h3>
             <div className="bucket-3-grid">
               <div className="bucket-col">
                 <div className="bucket-head">
@@ -224,12 +223,9 @@ export function ProposalAndPrompts({
                       flexWrap: 'wrap',
                     }}
                   >
-                    <strong style={{ fontSize: 13.5 }}>
+                    <strong style={{ fontSize: 13.5, fontWeight: 510 }}>
                       {res.assetType} · {res.name}
                     </strong>
-                    <span style={{ fontSize: 12, color: 'var(--ink-muted)', fontFamily: 'var(--font-mono)' }}>
-                      {res.code}
-                    </span>
                   </div>
                   <div style={{ color: 'var(--ink-secondary)', fontSize: 13, marginTop: 4, lineHeight: 1.55 }}>
                     {res.rationale}
@@ -257,7 +253,7 @@ export function ProposalAndPrompts({
           {/* Progressive Disclosure */}
           <details className="disclosure">
             <summary>
-              <span>人机分工与人工终审清单</span>
+              <span>协同与复核清单</span>
               <ChevronDown size={14} />
             </summary>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 14 }}>
@@ -313,19 +309,6 @@ export function ProposalAndPrompts({
               </ol>
             </div>
           </details>
-
-          <div
-            style={{
-              marginTop: 22,
-              paddingTop: 14,
-              borderTop: '1px solid var(--border-hairline)',
-              fontSize: 12,
-              color: 'var(--ink-muted)',
-              lineHeight: 1.6,
-            }}
-          >
-            {proposal.boundaryDisclaimer}
-          </div>
         </article>
 
         {/* Right: Clean 3-Shot Prompt Pack */}

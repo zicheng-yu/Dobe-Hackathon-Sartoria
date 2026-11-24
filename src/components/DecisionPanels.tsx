@@ -48,7 +48,6 @@ function MaterialSwatch({ fabricId }: { fabricId: string }) {
   return (
     <span
       className="decision-swatch"
-      title="模拟面料示意"
       style={{
         backgroundColor: baseColor,
         backgroundImage: `repeating-linear-gradient(42deg, transparent 0 3px, ${accentColor} 4px 5px)`,
@@ -70,7 +69,7 @@ function CandidateMaterial({ candidate }: { candidate: CandidateCombination | nu
 function CandidateEvidence({ candidate }: { candidate: CandidateCombination }) {
   return (
     <details className="decision-evidence">
-      <summary>查看依据与资产 ID</summary>
+      <summary>查看匹配依据</summary>
       <p className="decision-id">
         {[candidate.config.patternId, candidate.config.fabricId, ...candidate.config.craftIds, candidate.config.sceneId].join(' / ')}
       </p>
@@ -107,7 +106,6 @@ export function CandidateComparison({ result, selected, onSelectCandidate }: Can
     <section className="surface-card decision-panel" aria-label="方案对比">
       <div className="decision-heading">
         <h2>方案对比</h2>
-        {result.status === 'matched' && <span className="decision-caption">模拟面料示意</span>}
       </div>
       {result.status === 'no_match' && <p role="status" className="decision-alert">暂无满足全部硬条件的组合。请复核下列证据或确认可调整的条件。</p>}
       <div className="decision-candidate-grid">
@@ -287,7 +285,6 @@ export function RevisionWorkspace({
             <div className="decision-preview" aria-label="改稿差异预览">
               <div className="decision-heading">
                 <h3>V{version.number} · 改稿前</h3>
-                <span className="decision-caption">模拟面料示意</span>
               </div>
               <CandidateMaterial candidate={version.candidate} />
               {preview.requestedPatch.length ? <ChangeTable changes={preview.requestedPatch} /> : (
@@ -371,9 +368,6 @@ export function VersionHandoff({ history }: { history: DecisionHistory }) {
           <h3>选中版本依据</h3>
           {version.candidate && <CandidateEvidence candidate={version.candidate} />}
           {!version.candidate && <p>暂无满足全部硬条件的组合。</p>}
-          <ul className="decision-review-list">
-            {handoff.boundaries.map((boundary) => <li key={boundary}>{boundary}</li>)}
-          </ul>
         </div>
       </div>
       <details className="decision-evidence">

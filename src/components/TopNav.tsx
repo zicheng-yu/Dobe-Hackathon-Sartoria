@@ -1,4 +1,4 @@
-import { ArrowUpRight, Check, Cpu, Layers, ShieldCheck } from 'lucide-react';
+import { ArrowUpRight, Check, Cpu, Layers } from 'lucide-react';
 import { SITE_CONFIG } from '../data/siteConfig';
 import type { EngineMode, WorkerLlmStatus } from '../types/sartoria';
 import type { PortalSection } from '../utils/router';
@@ -17,7 +17,6 @@ interface TopNavProps {
   workerStatus: WorkerLlmStatus | null;
   ledgerCount: number;
   onOpenLlmModal: () => void;
-  onOpenBoundaryModal: () => void;
 }
 
 const PORTAL_ITEMS: Array<{ id: PortalSection; label: string }> = [
@@ -43,7 +42,6 @@ export function TopNav({
   workerStatus,
   ledgerCount,
   onOpenLlmModal,
-  onOpenBoundaryModal,
 }: TopNavProps) {
   const isOnlineActive = engineMode === 'online_worker' && Boolean(workerStatus?.configured);
   const remainingText =
@@ -51,7 +49,7 @@ export function TopNav({
       ? `GPT-6.2 · ${workerStatus.quota.visitor.remaining}/${workerStatus.quota.visitor.limit}`
       : engineMode === 'online_worker'
         ? 'GPT-6.2'
-        : '本地引擎';
+        : '本地规则';
 
   return (
     <div className="nav-shell no-print">
@@ -60,10 +58,9 @@ export function TopNav({
           type="button"
           className="brand-wordmark brand-btn"
           onClick={() => onNavigate('home')}
-          aria-label="返回 Sartoria AI 首页"
+          aria-label="返回 Sartoria 首页"
         >
           <span className="brand-name">SARTORIA</span>
-          <span className="brand-dot">AI</span>
         </button>
 
         <nav className="nav-links" aria-label="站点主导航">
@@ -90,10 +87,6 @@ export function TopNav({
               <span>{remainingText}</span>
             </button>
           )}
-          <button type="button" className="util-btn" onClick={onOpenBoundaryModal}>
-            <ShieldCheck size={14} strokeWidth={1.6} />
-            <span>能力边界</span>
-          </button>
         </div>
       </header>
 

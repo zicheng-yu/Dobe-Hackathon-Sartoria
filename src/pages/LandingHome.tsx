@@ -85,7 +85,7 @@ export function LandingHome({
     {
       key: 'docs',
       title: '项目文档',
-      desc: '系统架构、命题响应与能力边界',
+      desc: '系统架构与设计方案说明',
       url: `${SITE_CONFIG.siteUrl}/docs`,
       icon: BookOpen,
       cta: '阅读文档',
@@ -110,9 +110,9 @@ export function LandingHome({
       {/* Clean Editorial Hero */}
       <section className="portal-hero">
         <div className="portal-hero-text">
-          <h1 className="portal-h1">Sartoria AI</h1>
+          <h1 className="portal-h1">Sartoria</h1>
           <p className="portal-lead">
-            海派高定与团体职业服 AI 企划工作台。将自然语言需求转化为定制参数、场景搭配方案与可追溯项目档案。
+            海派高定与团体职业服企划工作台。将自然语言需求转化为定制参数、场景搭配方案与可追溯项目档案。
           </p>
 
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 28 }}>

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BoundaryModal } from './components/BoundaryModal';
 import { CandidateComparison, RevisionWorkspace } from './components/DecisionPanels';
 import { LlmConfigModal } from './components/LlmConfigModal';
 import {
@@ -171,7 +170,6 @@ export default function App() {
   const [workerStatus, setWorkerStatus] = useState<WorkerLlmStatus | null>(null);
   const [isRefreshingStatus, setIsRefreshingStatus] = useState(false);
   const [showLlmModal, setShowLlmModal] = useState(false);
-  const [showBoundaryModal, setShowBoundaryModal] = useState(false);
 
   const deconstructTokenRef = useRef(0);
   const confirmedPreviewRef = useRef<string | null>(null);
@@ -674,7 +672,6 @@ export default function App() {
         workerStatus={workerStatus}
         ledgerCount={ledgerRecords.length}
         onOpenLlmModal={handleOpenLlmSettings}
-        onOpenBoundaryModal={() => setShowBoundaryModal(true)}
       />
 
       <main className="app-main">
@@ -773,7 +770,7 @@ export default function App() {
         ) && (
           <div className="page-wrap">
             <h1 className="page-h1">{deconstructStatus === 'ready' ? '暂无可交接方案' : '先完成需求访谈'}</h1>
-            <p>{deconstructStatus === 'ready' ? '当前硬条件在模拟目录中暂无合格组合。请回到选配查看缺证和拒绝理由。' : '输入简报并核对来源，再进入选配。'}</p>
+            <p>{deconstructStatus === 'ready' ? '当前硬条件在目录中暂无合格组合。请回到选配查看待核与拒绝依据。' : '输入简报并核对来源，再进入选配。'}</p>
             <button type="button" className="btn-outline" onClick={() => navigate('demo', deconstructStatus === 'ready' ? 'configurator' : 'requirements')}>
               {deconstructStatus === 'ready' ? '查看选配依据' : '返回需求访谈'}
             </button>
@@ -837,8 +834,6 @@ export default function App() {
         onRefreshStatus={() => { void refreshWorkerStatus(); }}
         onClose={() => setShowLlmModal(false)}
       />
-
-      <BoundaryModal open={showBoundaryModal} onClose={() => setShowBoundaryModal(false)} />
     </>
   );
 }
